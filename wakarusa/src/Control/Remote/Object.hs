@@ -1,13 +1,11 @@
-{-# LANGUAGE GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, NullaryTypeClasses, FlexibleContexts #-}
 module Control.Remote.Object where
-
-import Control.Monad.IO.Class
-
-import Control.Remote.Monad 
 
 -- The is the 'local' handle into remote things.
 data Object :: (* -> *) -> * where
-  Object :: (forall a m . f a -> IO a) -> Object f
+  Object :: (forall a . f a -> IO a) -> Object f
 
-instance MonadIO m => RemoteMonad m Object where
-  (#) (Object g) f = liftIO $ g f
+-- The invoke method, that used an f-algebra 
+(#) :: Object f -> f a -> IO a
+Object f # g = f g
+
