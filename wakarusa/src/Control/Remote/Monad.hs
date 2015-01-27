@@ -16,6 +16,9 @@ class RemoteMonad m r where
 instance (MonadIO m, RemoteMonad IO r) => RemoteMonad m r where
        o # f = liftIO (o # f)
 
-instance RemoteMonad IO O.Object where
+instance RemoteMonad IO (O.Object IO) where
        (#) = (O.#)
+
+o :: MonadIO f => O.Object f IO
+o = O.Object liftIO
 

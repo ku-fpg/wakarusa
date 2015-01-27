@@ -5,7 +5,7 @@ import Control.Concurrent.MVar
 
 import Control.Remote.Object 
 
-type RemoteMVar s = Object (MVarM s)
+type RemoteMVar s = Object IO (MVarM s)
 
 data MVarM :: * -> * -> * where
   TakeMVar ::           MVarM s s        
@@ -16,18 +16,13 @@ runMVarM var (TakeMVar)  = takeMVar var
 runMVarM var (PutMVar s) = putMVar var s
 
 newRemoteMVar :: a -> IO (RemoteMVar a)
-newRemoteMVar a = do
-        ref <- newMVar a
-        return $ Object $ runMVarM ref
+newRemoteMVar = new . newMVar
 
 newRemoteEmptyMVar :: IO (RemoteMVar a)
-newRemoteEmptyMVar = do
-        ref <- newEmptyMVar
-        return $ Object $ runMVarM ref
+newRemoteEmptyMVar = new newEmptyMVar
 
 new :: IO (MVar a) -> IO (RemoteMVar a)
 new f = do
         ref <- f
         return $ Object $ runMVarM ref
-
-        
+ 
