@@ -9,6 +9,7 @@ class Transformation t f g | t -> f, t -> g where
    
 -- Free theorem for natural transformations: fmap h . r == r . fmap h, 
 -- (From Bartosz Milewski's blog, Functional Pearl: F for Functor, and other places)
+-- Sometimes t is called a functor morphism.
 
 {-# RULES "natural free theorem" [~] 
     forall h (r :: (Functor f, Functor g, Transformation t f g) => t) . 
