@@ -3,7 +3,10 @@ module Control.Natural where
 
 import qualified Control.Category as C
 
-class Transformation t f g | t -> f, t -> g where
+-- | A (Natural) Transformation is inside t, and contains the (typically 'Functor's) f and g.
+-- The order of arguments allows the use of GeneralizedNewtypeDeriving to wrap
+-- a 'Natural', but maintain the 'Transformation'
+class Transformation f g t | t -> f, t -> g where
   -- | The invoke method for a natural transformation.
   -- Notice there is no mention of monads or functors here.
   (#) :: t -> f a -> g a
@@ -13,15 +16,15 @@ class Transformation t f g | t -> f, t -> g where
 -- Sometimes t is called a functor morphism.
 
 {-# RULES "natural free theorem" [~] 
-    forall h (r :: (Functor f, Functor g, Transformation t f g) => t) . 
+    forall h (r :: (Functor f, Functor g, Transformation f g t) => t) . 
     fmap h . (r #) = (r #) . fmap h 
   #-}
 
--- Originally called Natural.
+
 newtype Natural :: (* -> *) -> (* -> *) -> * where
   Natural :: (forall a . f a -> g a) -> Natural f g
 
-instance Transformation (Natural f g) f g where
+instance Transformation f g (Natural f g) where
    Natural f # g = f g
 
 -- I'm actually surprised this works. The kind

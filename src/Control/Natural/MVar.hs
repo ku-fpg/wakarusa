@@ -1,11 +1,12 @@
-{-# LANGUAGE GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Natural.MVar where
 
 import Control.Concurrent.MVar
 
 import Control.Natural
 
-type RemoteMVar s = Natural (MVarM s) IO
+newtype RemoteMVar s = RemoteMVar (Natural (MVarM s) IO)
+  deriving (Transformation (MVarM s) IO)
 
 data MVarM :: * -> * -> * where
   TakeMVar ::           MVarM s s        
@@ -18,4 +19,4 @@ runMVarM var (PutMVar s) = putMVar var s
 new :: IO (MVar a) -> IO (RemoteMVar a)
 new f = do
         ref <- f
-        return $ Natural $ runMVarM ref
+        return $ RemoteMVar $ Natural $ runMVarM ref
