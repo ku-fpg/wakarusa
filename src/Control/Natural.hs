@@ -4,8 +4,10 @@ module Control.Natural where
 import qualified Control.Category as C
 
 -- | A (Natural) Transformation is inside t, and contains the (typically 'Functor's) f and g.
+--
 -- The order of arguments allows the use of GeneralizedNewtypeDeriving to wrap
--- a 'Natural', but maintain the 'Transformation'
+-- a 'Natural', but maintain the 'Transformation' constraint. Thus, '#' can
+-- be used on abstract types.
 class Transformation f g t | t -> f, t -> g where
   -- | The invoke method for a natural transformation.
   -- Notice there is no mention of monads or functors here.
