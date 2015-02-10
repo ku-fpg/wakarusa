@@ -13,6 +13,8 @@ class Transformation f g t | t -> f, t -> g where
   -- Notice there is no mention of monads or functors here.
   (#) :: t -> f a -> g a
    
+infixr 0 #      -- same as ($)
+
 -- Free theorem for natural transformations: fmap h . r == r . fmap h, 
 -- (From Bartosz Milewski's blog, Functional Pearl: F for Functor, and other places)
 -- Sometimes t is called a functor morphism.
