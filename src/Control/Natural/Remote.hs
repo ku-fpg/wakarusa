@@ -8,8 +8,7 @@ import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Vector as Vector
 
 import Control.Monad.ConstrainedNormal
-
-
+import Control.Applicative ((*>))
 {-
 instance Remote f where
   remote :: f -> Request f
@@ -33,9 +32,25 @@ decodeSquare (Square {}) (Number n) = return (4 :: Int)
 square :: Int -> NAF Unconstrained Square Int
 square = liftNAF . Square
 
+data A :: (* -> *) -> * -> * where
+  PureNAF :: a -> A t a
+  ApNAF :: A t (y -> z) -> t y -> A t z
+
 runSquare :: Natural JsonRpc2 IO -> Natural (NAF Unconstrained Square) IO
 runSquare jsonRpc = Natural $ \ f -> do
-   undefined
+   -- forall a c r t. (forall x. x -> r x) -> (forall y z. c y => r (y -> z) -> t y -> r z) -> NAF c t a -> r a
+   let naf = foldNAF PureNAF ApNAF f
+   let fn :: A Square a -> [JsonRpcRequest] -> IO ([JsonReqResponse],a)
+       fn (PureNAF a) xs = do res <- jsonRpc # JsonRpc2 (reverse xs)
+                              return (reverse res,a)
+       fn (ApNAF g a) xs = do (y : ys,r) <- fn g (encodeSquare a : xs)
+                              case decodeSquare a y of
+                                Nothing -> error "X"
+                                Just v -> return (ys,r v)
+
+   (_,a) <- fn naf []
+   return a
+
 {-
    let en = encodeSquare f
    [r] <- jsonRpc # JsonRpc2 [en]
