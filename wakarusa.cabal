@@ -15,7 +15,9 @@ library
   exposed-modules:     
                        Control.Natural,
                        Control.Natural.Remote,
-                       Control.Natural.Session
+                       Control.Natural.Session,
+                       Control.Natural.JsonRpc
+                       
 
   -- other-modules:       
   other-extensions:    TypeFamilies, RankNTypes, GADTs, KindSignatures, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, FunctionalDependencies, UndecidableInstances, NullaryTypeClasses

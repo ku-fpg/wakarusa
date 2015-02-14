@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
-module Control.Natural.Remote where
+module Control.Natural.JsonRpc where
         
 import Control.Natural
 import Data.Aeson as A
@@ -43,7 +43,6 @@ data JsonRpcResult = JsonRpcResult Value
 
 instance ToJSON JsonRpcResult where
    toJSON (JsonRpcResult v) = object ["jsonrpc" .= (2.0 :: Double), "result" .= v, "id" .= Null]
-
 
 instance FromJSON JsonRpcResult where
    parseJSON (Object v) = JsonRpcResult
