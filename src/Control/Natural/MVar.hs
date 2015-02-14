@@ -5,7 +5,10 @@ import Control.Concurrent.MVar
 
 import Control.Natural
 
-newtype RemoteMVar s = RemoteMVar (Natural (MVarM s) IO)
+-- | This is more an example of how to build a Natural API.
+-- We still need to deside of we abstact over IO, or MonadIO m.
+
+newtype NatualMVar s = NatualMVar (Natural (MVarM s) IO)
   deriving (Transformation (MVarM s) IO)
 
 data MVarM :: * -> * -> * where
@@ -19,4 +22,4 @@ runMVarM var (PutMVar s) = putMVar var s
 new :: IO (MVar a) -> IO (RemoteMVar a)
 new f = do
         ref <- f
-        return $ RemoteMVar $ Natural $ runMVarM ref
+        return $ RemoteMVar $ Natural $ NatualMVar ref
