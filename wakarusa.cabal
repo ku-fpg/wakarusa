@@ -15,7 +15,8 @@ library
   exposed-modules:     
                        Control.Natural,
                        Control.Natural.Remote,
-                       Control.Natural.Session,
+                       Control.Wakarusa.Session,
+                       Control.Wakarusa.Functor,
                        Control.Natural.JsonRpc
                        
 

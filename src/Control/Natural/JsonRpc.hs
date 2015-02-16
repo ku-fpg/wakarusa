@@ -13,7 +13,8 @@ import Control.Monad (mzero)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 
-import Control.Natural.Session
+import Control.Wakarusa.Session
+import Control.Wakarusa.Functor
 
 ------------------------------------------------------------------------------------------
 
@@ -51,11 +52,11 @@ instance FromJSON JsonRpcResult where
 
 ------------------------------------------------------------------------------------------
 
-jsonRpcClient' :: Natural JsonRpc (Session LBS.ByteString)
+jsonRpcClient' :: Natural JsonRpc (NF Unconstrained (Session LBS.ByteString))
 jsonRpcClient' = Natural $ \ f ->
   case f of
     SendJsonRpc  msg -> let fn = undefined
-                        in fmap fn $ Send (encode msg)
+                        in nf # fmap fn $ Send (encode msg)
 {- 
                            case v of
                              Nothing -> return []
@@ -63,8 +64,10 @@ jsonRpcClient' = Natural $ \ f ->
                                           Nothing -> return []
                                           Just v'' -> return v''
 -}
-    SendJsonRpc_ msg -> Send_ (encode msg)
-    CloseJsonRpc     -> Close
+    SendJsonRpc_ msg -> nf # Send_ (encode msg)
+    CloseJsonRpc     -> nf # Close
+
+
 
 
 jsonRpcClient :: Monad m => Natural (Session LBS.ByteString) m -> Natural JsonRpc m
