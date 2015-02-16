@@ -12,6 +12,7 @@ import Control.Applicative
 import Control.Monad (mzero)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
+import Data.Scientific
 
 import Control.Wakarusa.Session
 import Control.Wakarusa.Functor
@@ -53,41 +54,52 @@ instance FromJSON JsonRpcResult where
 
 ------------------------------------------------------------------------------------------
 
-jsonRpcClient' :: Natural JsonRpc (FUNCTOR (Session LBS.ByteString))
-jsonRpcClient' = Natural $ \ f ->
+jsonRpcClient :: Natural JsonRpc (FUNCTOR (Session LBS.ByteString))
+jsonRpcClient = Natural $ \ f ->
   case f of
     SendJsonRpc  msg -> let fn Nothing = []
-                            fn (Just v) = case decode v' of 
-                                            Nothing -> return []
-                                            Just v'' -> return v''
-                        in nf # fmap fn $ Send (encode msg)
+                            fn (Just v') = case decode v' of 
+                                            Nothing -> []
+                                            Just v'' -> v''
+                        in fmap fn $ nf # Send (encode msg)
     SendJsonRpc_ msg -> nf # Send_ (encode msg)
     CloseJsonRpc     -> nf # Close
 
-jsonRpcClient :: Monad m => Natural (Session LBS.ByteString) m -> Natural JsonRpc m
-jsonRpcClient g = Natural $ \ f ->
-  case f of
-    SendJsonRpc  msg -> do v <- g # Send (encode msg)
-                           case v of
-                             Nothing -> return []
-                             Just v' -> case decode v' of 
-                                          Nothing -> return []
-                                          Just v'' -> return v''
-    SendJsonRpc_ msg -> g # Send_ (encode msg)
-    CloseJsonRpc     -> g # Close
 
-jsonRpcServer :: Monad m => Natural JsonRpc m -> Natural (Session LBS.ByteString) m
-jsonRpcServer g = Natural $ \ f -> case f of
+-- OLD API
+-- jsonRpcClient :: Monad m => Natural (Session LBS.ByteString) m -> Natural JsonRpc m
+
+jsonRpcServer :: Natural (Session LBS.ByteString) (MONAD JsonRpc)
+jsonRpcServer = Natural $ \ f -> case f of
    Send msg -> case decode msg of 
                   Nothing -> fail "jsonRpcServer $ Send _"
-                  Just msg' -> do r <- g # SendJsonRpc_ msg'
-                                  return $ Just $ encode r
+                  Just msg' -> fmap (Just . encode) 
+                             $ nm # SendJsonRpc msg'
    Send_ msg -> case decode msg of 
                   Nothing -> fail "jsonRpcServer $ Send_ _"
-                  Just msg' -> g # SendJsonRpc_ msg'
-   Close -> g # CloseJsonRpc 
+                  Just msg' -> nm # SendJsonRpc_ msg'
+   Close -> nm # CloseJsonRpc 
+
+-- OLD API
+-- jsonRpcServer :: Monad m => Natural JsonRpc m -> Natural (Session LBS.ByteString) m
+
+------------------------------------------------------------------------------------------
+
+data Square :: * -> * where
+ Square :: Int -> Square Int      -- (remotely) square a number
+
+square :: Int -> FUNCTOR Square Int
+square n = nf # Square n
+
+class JsonRpcAPI f where
+  jsonRpcAPI :: Natural f (FUNCTOR JsonRpc)
+--  jsonRpcAPI1 :: Natural JsonRpc ()
+
+instance JsonRpcAPI Square where
+  jsonRpcAPI = Natural $ \ f -> case f of
+                  Square n -> fmap (\ [JsonRpcResult (Number v)] -> case toBoundedInteger v of
+                                                                      Nothing -> error "bounded problem"
+                                                                      Just i -> i)
+                            $ nf # SendJsonRpc [JsonRpcCall "square" [Number $ fromInteger $ fromIntegral $ n ]]
 
 
--- Can you turn a Natural into a Natural transformer, and factor out the requrement 
--- that the API be a monad?
--- :: Natural f g -> Natural f m -> Natural g m
