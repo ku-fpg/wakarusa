@@ -9,9 +9,9 @@ nf :: Natural m (NF Unconstrained m)
 nf = Natural liftNF
 
 class Functor1 h where
- nmap :: Natural f g -> Natural (h f) (h g)
+ fmap1 :: Natural f g -> Natural (h f) (h g)
 
 instance Functor1 (NF c) where
- nmap o = Natural $ foldNF (\ x_a tx -> fmap x_a (liftNF (o # tx)))
+ fmap1 o = Natural $ foldNF (\ x_a tx -> fmap x_a (liftNF (o # tx)))
 
 
