@@ -14,10 +14,10 @@ cabal-version:       >=1.10
 library
   exposed-modules:     
                        Control.Natural,
-                       Control.Natural.Remote,
+--                       Control.Natural.Remote,
                        Control.Wakarusa.Session,
                        Control.Wakarusa.Functor,
-                       Control.Natural.JsonRpc
+                       Control.Wakarusa.JsonRpc
                        
 
   -- other-modules:       

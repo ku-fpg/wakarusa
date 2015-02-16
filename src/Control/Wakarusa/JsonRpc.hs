@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
-module Control.Natural.JsonRpc where
+module Control.Wakarusa.JsonRpc where
         
 import Control.Natural
 import Data.Aeson as A
