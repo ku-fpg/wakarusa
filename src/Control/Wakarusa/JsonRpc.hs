@@ -19,6 +19,7 @@ import Control.Wakarusa.Functor
 ------------------------------------------------------------------------------------------
 
 -- This is our basic JsonRpc API. It is a reflection of the Session API.
+-- Notice how we can send and receive multiple calls, as in the JSON RPC API.
 
 data JsonRpc :: * -> * where
   SendJsonRpc  :: [JsonRpcCall] -> JsonRpc [JsonRpcResult]
@@ -52,23 +53,16 @@ instance FromJSON JsonRpcResult where
 
 ------------------------------------------------------------------------------------------
 
-jsonRpcClient' :: Natural JsonRpc (NF Unconstrained (Session LBS.ByteString))
+jsonRpcClient' :: Natural JsonRpc (FUNCTOR (Session LBS.ByteString))
 jsonRpcClient' = Natural $ \ f ->
   case f of
-    SendJsonRpc  msg -> let fn = undefined
+    SendJsonRpc  msg -> let fn Nothing = []
+                            fn (Just v) = case decode v' of 
+                                            Nothing -> return []
+                                            Just v'' -> return v''
                         in nf # fmap fn $ Send (encode msg)
-{- 
-                           case v of
-                             Nothing -> return []
-                             Just v' -> case decode v' of 
-                                          Nothing -> return []
-                                          Just v'' -> return v''
--}
     SendJsonRpc_ msg -> nf # Send_ (encode msg)
     CloseJsonRpc     -> nf # Close
-
-
-
 
 jsonRpcClient :: Monad m => Natural (Session LBS.ByteString) m -> Natural JsonRpc m
 jsonRpcClient g = Natural $ \ f ->

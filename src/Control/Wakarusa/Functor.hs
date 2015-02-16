@@ -5,7 +5,9 @@ import Control.Monad.ConstrainedNormal
 
 import Control.Natural
 
-nf :: Natural m (NF Unconstrained m)
+type FUNCTOR = NF Unconstrained
+
+nf :: Natural m (FUNCTOR m)
 nf = Natural liftNF
 
 class Functor1 h where
@@ -13,5 +15,4 @@ class Functor1 h where
 
 instance Functor1 (NF c) where
  fmap1 o = Natural $ foldNF (\ x_a tx -> fmap x_a (liftNF (o # tx)))
-
 
