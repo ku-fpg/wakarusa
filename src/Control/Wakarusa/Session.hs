@@ -1,5 +1,5 @@
 {-# LANGUAGE GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
-module Control.Natural.Session where
+module Control.Wakarusa.Session where
 
 import Data.ByteString (ByteString)
 import Control.Applicative
