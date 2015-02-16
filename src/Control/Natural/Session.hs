@@ -2,6 +2,7 @@
 module Control.Natural.Session where
 
 import Data.ByteString (ByteString)
+import Control.Applicative
 
 import Control.Natural (Natural)
 
@@ -13,3 +14,8 @@ data Session :: * -> * -> * where
   Send_ :: msg -> Session msg ()                 -- Messages that do not need reply
   Close ::        Session msg ()                 -- Last action; can free session resourses.
 
+instance Functor (Session m) where
+instance Applicative (Session m) where
+instance Monad (Session m) where
+        
+        

@@ -51,6 +51,22 @@ instance FromJSON JsonRpcResult where
 
 ------------------------------------------------------------------------------------------
 
+jsonRpcClient' :: Natural JsonRpc (Session LBS.ByteString)
+jsonRpcClient' = Natural $ \ f ->
+  case f of
+    SendJsonRpc  msg -> let fn = undefined
+                        in fmap fn $ Send (encode msg)
+{- 
+                           case v of
+                             Nothing -> return []
+                             Just v' -> case decode v' of 
+                                          Nothing -> return []
+                                          Just v'' -> return v''
+-}
+    SendJsonRpc_ msg -> Send_ (encode msg)
+    CloseJsonRpc     -> Close
+
+
 jsonRpcClient :: Monad m => Natural (Session LBS.ByteString) m -> Natural JsonRpc m
 jsonRpcClient g = Natural $ \ f ->
   case f of
@@ -73,3 +89,8 @@ jsonRpcServer g = Natural $ \ f -> case f of
                   Nothing -> fail "jsonRpcServer $ Send_ _"
                   Just msg' -> g # SendJsonRpc_ msg'
    Close -> g # CloseJsonRpc 
+
+
+-- Can you turn a Natural into a Natural transformer, and factor out the requrement 
+-- that the API be a monad?
+-- :: Natural f g -> Natural f m -> Natural g m
