@@ -44,8 +44,8 @@ data SingleCall :: * -> * where
 runSquare :: Square :~> SingleCall
 runSquare = Nat $ \ f -> case f of
     Square n -> SingleCall
-                    (JsonRpcCall "square" [Number $ fromInteger $ fromIntegral $ n ])
-               $ \ (JsonRpcResult (Number v)) -> case toBoundedInteger v of
+                    (JsonRpcCall "square" [toJSON n])
+              $ \ (JsonRpcResult (Number v)) -> case toBoundedInteger v of
                                                    Nothing -> error "bounded problem"
                                                    Just i -> i
 
@@ -64,6 +64,7 @@ runApplicative o = Nat $ \ f -> do
                               return (ys, r (k y))
    (_,a) <- fn naf []
    return a
+
 
 ------------------------------------------------------------------------------------------
 -- These encode how the JSON RPC uses JSON
