@@ -1,6 +1,11 @@
-{-# LANGUAGE PolyKinds, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
+{-# LANGUAGE DeriveDataTypeable, TypeOperators, PolyKinds, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
 module Control.Natural where
 
+-- This module takes the Nat newtype, and some other constructions 
+
+import Data.Data as Data
+import Data.Monoid
+import Prelude
 import qualified Control.Category as C
 
 -- | A (Natural) Transformation is inside t, and contains the (typically 'Functor's) f and g.
@@ -24,18 +29,22 @@ infixr 0 #      -- same as ($)
     fmap h . (r #) = (r #) . fmap h 
   #-}
 
+infixr 0 ~>
+-- | A natural transformation from @f@ to @g@
+type f ~> g = forall x. f x -> g x
 
-newtype Natural :: (k -> *) -> (k -> *) -> * where
-  Natural :: (forall a . f a -> g a) -> Natural f g
+infixr 0 :~>, $$
+-- | A natural transformation suitable for storing in a container.
+newtype f :~> g = Nat { ($$) :: f ~> g } deriving Typeable
 
-instance Transformation f g (Natural f g) where
-   Natural f # g = f g
+instance f ~ g => Monoid (f :~> g) where
+  mempty = Nat id
+  mappend (Nat f) (Nat g) = Nat (f . g)
 
--- I'm actually surprised this works. The kind
--- of :->, and the kind of cat (from the class)
--- do not match. Some form of higher-kindiness
--- must be going on here.
-instance C.Category Natural where
-  id = Natural id
-  Natural g . Natural h = Natural (g . h)
+instance Transformation f g (f :~> g) where
+   Nat f # g = f g
+
+instance C.Category (:~>) where
+  id = Nat id
+  Nat g . Nat h = Nat (g . h)
   

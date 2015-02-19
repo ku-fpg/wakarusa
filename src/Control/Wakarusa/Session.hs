@@ -4,15 +4,26 @@ module Control.Wakarusa.Session where
 import Data.ByteString (ByteString)
 import Control.Applicative
 
-import Control.Natural (Natural)
+--import Control.Natural (Natural)
 
+class Close f where
+  -- | It is polite to tell a session that you are closing
+  close :: f ()
+
+class AsyncSend f where
+  asyncSend :: msg -> f msg ()
+
+class SyncSend f where
+  syncSend :: msg -> f msg (Maybe reply)
+
+{-
 -- | The 'Session' is our interface for sending and receiving ByteString messages over a network.
 -- Clients build on top of 'Natural' ('Session' 'ByteString') m; Servers build 'Natural' ('Session' 'ByteString') m.
 
-data Session :: * -> * -> * where
-  Send  :: msg -> Session msg (Maybe msg) -- Messages that have a reply
-  Send_ :: msg -> Session msg ()                 -- Messages that do not need reply
-  Close ::        Session msg ()                 -- Last action; can free session resourses.
-
+data Session :: * -> * -> * -> * where
+  Send  :: msg -> Session msg repl (Maybe repl)      -- Messages that have a reply
+  Send_ :: msg -> Session msg repl ()                -- Messages that do not need reply
+  Close ::        Session msg repl ()                -- Last action; can free session resourses.
+-}
 
         

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators, OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Wakarusa.JsonRpc where
         
 import Control.Natural
@@ -18,7 +18,6 @@ import Control.Wakarusa.Session
 import Control.Wakarusa.Functor
 
 ------------------------------------------------------------------------------------------
-
 -- This is our basic JsonRpc API. It is a reflection of the Session API.
 -- Notice how we can send and receive multiple calls, as in the JSON RPC API.
 
@@ -26,8 +25,47 @@ data JsonRpc :: * -> * where
   SendJsonRpc  :: [JsonRpcCall] -> JsonRpc [JsonRpcResult]
   CloseJsonRpc ::                  JsonRpc ()
 
+class JsonRpcClass f where
+  sendJsonRpc :: [JsonRpcCall] -> f [JsonRpcResult]
+
 ------------------------------------------------------------------------------------------
 
+data Square :: * -> * where
+ Square :: Int -> Square Int      -- (remotely) square a number
+
+class SquareClass f where
+  square :: Int -> f Int         
+
+-- This is a specialized version of the call to fmap
+data SingleCall :: * -> * where
+  SingleCall :: JsonRpcCall -> (JsonRpcResult -> a) -> SingleCall a
+
+-- encoding what Square does
+runSquare :: Square :~> SingleCall
+runSquare = Nat $ \ f -> case f of
+    Square n -> SingleCall
+                    (JsonRpcCall "square" [Number $ fromInteger $ fromIntegral $ n ])
+               $ \ (JsonRpcResult (Number v)) -> case toBoundedInteger v of
+                                                   Nothing -> error "bounded problem"
+                                                   Just i -> i
+
+data A :: (* -> *) -> * -> * where
+  PureNAF :: a -> A t a
+  ApNAF :: A t (y -> z) -> t y -> A t z
+
+runApplicative :: forall f g . (JsonRpcClass g, Monad g) => (f :~> SingleCall) -> (APPLICATIVE f :~> g)
+runApplicative o = Nat $ \ f -> do
+   let naf = foldNAF PureNAF ApNAF f
+   let fn :: JsonRpcClass g => A f a -> [JsonRpcCall] -> g ([JsonRpcResult],a)
+       fn (PureNAF a) xs = do res <- sendJsonRpc (reverse xs)
+                              return (reverse res,a)
+       fn (ApNAF g a) xs = do let SingleCall call k = o $$ a
+                              (y : ys,r) <- fn g (call : xs)
+                              return (ys, r (k y))
+   (_,a) <- fn naf []
+   return a
+
+------------------------------------------------------------------------------------------
 -- These encode how the JSON RPC uses JSON
 
 data JsonRpcCall = JsonRpcCall Text [Value]
@@ -63,7 +101,6 @@ jsonRpcClient = Natural $ \ f ->
                         in fmap fn $ nf # Send (encode msg)
     SendJsonRpc_ msg -> nf # Send_ (encode msg)
     CloseJsonRpc     -> nf # Close
-
 
 -- OLD API
 -- jsonRpcClient :: Monad m => Natural (Session LBS.ByteString) m -> Natural JsonRpc m
