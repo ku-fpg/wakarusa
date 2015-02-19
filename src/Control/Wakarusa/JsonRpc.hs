@@ -24,7 +24,6 @@ import Control.Wakarusa.Functor
 
 data JsonRpc :: * -> * where
   SendJsonRpc  :: [JsonRpcCall] -> JsonRpc [JsonRpcResult]
-  SendJsonRpc_ :: [JsonRpcCall] -> JsonRpc ()
   CloseJsonRpc ::                  JsonRpc ()
 
 ------------------------------------------------------------------------------------------
@@ -53,7 +52,7 @@ instance FromJSON JsonRpcResult where
    parseJSON _          = mzero
 
 ------------------------------------------------------------------------------------------
-
+{-
 jsonRpcClient :: Natural JsonRpc (FUNCTOR (Session LBS.ByteString))
 jsonRpcClient = Natural $ \ f ->
   case f of
@@ -103,3 +102,11 @@ instance JsonRpcAPI Square where
                             $ nf # SendJsonRpc [JsonRpcCall "square" [Number $ fromInteger $ fromIntegral $ n ]]
 
 
+-- APPLICATIVE Square 
+-- JsonRpc
+-- Session [JsonRpcCall] [JsonRpcResult]
+-- JsonRpc
+-- APPLICATIVE Square
+
+
+-}
