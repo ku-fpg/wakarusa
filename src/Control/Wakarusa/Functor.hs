@@ -6,7 +6,6 @@ import Control.Applicative
 import Control.Natural
 
 ---------------------------------------------------------------------------
-
 class Functor1 h where
  fmap1 :: (f :~> g) -> (h f :~> h g)
 
@@ -18,6 +17,7 @@ nf = Nat liftNF
 
 instance Functor1 (NF c) where
  fmap1 o = Nat $ foldNF $ \ x_a tx -> fmap x_a (liftNF (o $$ tx))
+
 ---------------------------------------------------------------------------
 type APPLICATIVE = NAF Unconstrained
 
@@ -35,5 +35,4 @@ nm = Nat liftNM
 
 instance Functor1 (NM c) where
   fmap1 o = Nat $ foldNM return $ \ tx x_r -> liftNM (o $$ tx) >>= x_r
-
 
