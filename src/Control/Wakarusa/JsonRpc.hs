@@ -38,7 +38,7 @@ class SquareClass f where
 
 -- This is a specialized version of the call to fmap
 data SingleCall :: * -> * where
-  SingleCall :: JsonRpcCall -> (JsonRpcResult -> a) -> SingleCall a
+  SingleCall :: FromJSON a => JsonRpcCall -> (JsonRpcResult -> a) -> SingleCall a
 
 -- encoding what Square does
 runSquare :: Square :~> SingleCall
@@ -59,11 +59,20 @@ runApplicative o = Nat $ \ f -> do
    let fn :: JsonRpcClass g => A f a -> [JsonRpcCall] -> g ([JsonRpcResult],a)
        fn (PureNAF a) xs = do res <- sendJsonRpc (reverse xs)
                               return (reverse res,a)
-       fn (ApNAF g a) xs = do let SingleCall call k = o $$ a
-                              (y : ys,r) <- fn g (call : xs)
-                              return (ys, r (k y))
+       fn (ApNAF g a) xs = do let sig@(SingleCall call k) = o $$ a
+                              (JsonRpcResult y : ys,r) <- fn g (call : xs)
+                              case fromJSON' sig y of
+                                Nothing -> error $ "failed"
+                                Just v -> return (ys, r v)
    (_,a) <- fn naf []
    return a
+
+fromJSON' :: SingleCall a -> Value -> Maybe a
+fromJSON' (SingleCall {}) v = case fromJSON v of 
+                  Error {} -> Nothing
+                  Success a -> Just a
+                
+-- SingleCall :: FromJSON a => JsonRpcCall -> (JsonRpcResult -> a) -> SingleCall a
 
 
 ------------------------------------------------------------------------------------------
