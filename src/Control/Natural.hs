@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
+{-# LANGUAGE PolyKinds, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
 module Control.Natural where
 
 import qualified Control.Category as C
@@ -25,7 +25,7 @@ infixr 0 #      -- same as ($)
   #-}
 
 
-newtype Natural :: (* -> *) -> (* -> *) -> * where
+newtype Natural :: (k -> *) -> (k -> *) -> * where
   Natural :: (forall a . f a -> g a) -> Natural f g
 
 instance Transformation f g (Natural f g) where
