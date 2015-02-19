@@ -36,6 +36,12 @@ data Square :: * -> * where
 class SquareClass f where
   square :: Int -> f Int         
 
+instance SquareClass Square where
+  square = Square
+
+instance SquareClass JsonRpcCall where
+  square n = JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
+
 -- encoding what Square does
 runSquare :: Square :~> JsonRpcCall
 runSquare = Nat $ \ f -> case f of
@@ -45,13 +51,13 @@ data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
   ApNAF :: A t (y -> z) -> t y -> A t z
 
-runApplicative :: forall f g . (JsonRpcClass g, Monad g) => (f :~> JsonRpcCall) -> (APPLICATIVE f :~> g)
-runApplicative o = Nat $ \ f -> do
+runApplicative :: forall f g . (JsonRpcClass g, Monad g) => (APPLICATIVE JsonRpcCall :~> g)
+runApplicative  = Nat $ \ f -> do
    let naf = foldNAF PureNAF ApNAF f
-   let fn :: JsonRpcClass g => A f a -> [JsonRpcRequest] -> g ([JsonRpcResponse],a)
+   let fn :: JsonRpcClass g => A JsonRpcCall a -> [JsonRpcRequest] -> g ([JsonRpcResponse],a)
        fn (PureNAF a) xs = do res <- sendJsonRpc (reverse xs)
                               return (reverse res,a)
-       fn (ApNAF g a) xs = case o $$ a of
+       fn (ApNAF g a) xs = case a of
                              JsonRpcCall call -> do
                               (JsonRpcResponse y : ys,r) <- fn g (call : xs)
                               case fromJSON y of
