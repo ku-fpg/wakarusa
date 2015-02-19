@@ -36,18 +36,13 @@ data Square :: * -> * where
 class SquareClass f where
   square :: Int -> f Int         
 
--- This is a specialized version of the call to fmap
 data SingleCall :: * -> * where
-  SingleCall :: FromJSON a => JsonRpcCall -> (JsonRpcResult -> a) -> SingleCall a
+  SingleCall :: FromJSON a => JsonRpcCall -> SingleCall a
 
 -- encoding what Square does
 runSquare :: Square :~> SingleCall
 runSquare = Nat $ \ f -> case f of
-    Square n -> SingleCall
-                    (JsonRpcCall "square" [toJSON n])
-              $ \ (JsonRpcResult (Number v)) -> case toBoundedInteger v of
-                                                   Nothing -> error "bounded problem"
-                                                   Just i -> i
+    Square n -> SingleCall $ JsonRpcCall "square" [toJSON n]
 
 data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
@@ -59,11 +54,12 @@ runApplicative o = Nat $ \ f -> do
    let fn :: JsonRpcClass g => A f a -> [JsonRpcCall] -> g ([JsonRpcResult],a)
        fn (PureNAF a) xs = do res <- sendJsonRpc (reverse xs)
                               return (reverse res,a)
-       fn (ApNAF g a) xs = do let sig@(SingleCall call k) = o $$ a
+       fn (ApNAF g a) xs = case o $$ a of
+                             SingleCall call -> do
                               (JsonRpcResult y : ys,r) <- fn g (call : xs)
-                              case fromJSON' sig y of
-                                Nothing -> error $ "failed"
-                                Just v -> return (ys, r v)
+                              case fromJSON y of
+                                Error {} -> error $ "failed"
+                                Success v -> return (ys, r v)
    (_,a) <- fn naf []
    return a
 
