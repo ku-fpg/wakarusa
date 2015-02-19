@@ -22,11 +22,11 @@ import Control.Wakarusa.Functor
 -- Notice how we can send and receive multiple calls, as in the JSON RPC API.
 
 data JsonRpc :: * -> * where
-  SendJsonRpc  :: [JsonRpcCall] -> JsonRpc [JsonRpcResult]
+  SendJsonRpc  :: [JsonRpcRequest] -> JsonRpc [JsonRpcResponse]
   CloseJsonRpc ::                  JsonRpc ()
 
 class JsonRpcClass f where
-  sendJsonRpc :: [JsonRpcCall] -> f [JsonRpcResult]
+  sendJsonRpc :: [JsonRpcRequest] -> f [JsonRpcResponse]
 
 ------------------------------------------------------------------------------------------
 
@@ -36,64 +36,60 @@ data Square :: * -> * where
 class SquareClass f where
   square :: Int -> f Int         
 
-data SingleCall :: * -> * where
-  SingleCall :: FromJSON a => JsonRpcCall -> SingleCall a
-
 -- encoding what Square does
-runSquare :: Square :~> SingleCall
+runSquare :: Square :~> JsonRpcCall
 runSquare = Nat $ \ f -> case f of
-    Square n -> SingleCall $ JsonRpcCall "square" [toJSON n]
+    Square n -> JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
 
 data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
   ApNAF :: A t (y -> z) -> t y -> A t z
 
-runApplicative :: forall f g . (JsonRpcClass g, Monad g) => (f :~> SingleCall) -> (APPLICATIVE f :~> g)
+runApplicative :: forall f g . (JsonRpcClass g, Monad g) => (f :~> JsonRpcCall) -> (APPLICATIVE f :~> g)
 runApplicative o = Nat $ \ f -> do
    let naf = foldNAF PureNAF ApNAF f
-   let fn :: JsonRpcClass g => A f a -> [JsonRpcCall] -> g ([JsonRpcResult],a)
+   let fn :: JsonRpcClass g => A f a -> [JsonRpcRequest] -> g ([JsonRpcResponse],a)
        fn (PureNAF a) xs = do res <- sendJsonRpc (reverse xs)
                               return (reverse res,a)
        fn (ApNAF g a) xs = case o $$ a of
-                             SingleCall call -> do
-                              (JsonRpcResult y : ys,r) <- fn g (call : xs)
+                             JsonRpcCall call -> do
+                              (JsonRpcResponse y : ys,r) <- fn g (call : xs)
                               case fromJSON y of
                                 Error {} -> error $ "failed"
                                 Success v -> return (ys, r v)
    (_,a) <- fn naf []
    return a
 
-fromJSON' :: SingleCall a -> Value -> Maybe a
-fromJSON' (SingleCall {}) v = case fromJSON v of 
-                  Error {} -> Nothing
-                  Success a -> Just a
-                
--- SingleCall :: FromJSON a => JsonRpcCall -> (JsonRpcResult -> a) -> SingleCall a
-
 
 ------------------------------------------------------------------------------------------
 -- These encode how the JSON RPC uses JSON
 
-data JsonRpcCall = JsonRpcCall Text [Value]
+data JsonRpcRequest = JsonRpcRequest Text [Value]
 
-instance ToJSON JsonRpcCall where
-   toJSON (JsonRpcCall method args) = object ["jsonrpc" .= (2.0 :: Double), "method" .= method, "args" .= args, "id" .= Null]
+instance ToJSON JsonRpcRequest where
+   toJSON (JsonRpcRequest method args) = object ["jsonrpc" .= (2.0 :: Double), "method" .= method, "args" .= args, "id" .= Null]
 
-instance FromJSON JsonRpcCall where
-   parseJSON (Object v) = JsonRpcCall
+instance FromJSON JsonRpcRequest where
+   parseJSON (Object v) = JsonRpcRequest
                       <$> v .: "method"
                       <*> v .: "args"
    parseJSON _          = mzero
 
-data JsonRpcResult = JsonRpcResult Value
+data JsonRpcResponse = JsonRpcResponse Value
 
-instance ToJSON JsonRpcResult where
-   toJSON (JsonRpcResult v) = object ["jsonrpc" .= (2.0 :: Double), "result" .= v, "id" .= Null]
+instance ToJSON JsonRpcResponse where
+   toJSON (JsonRpcResponse v) = object ["jsonrpc" .= (2.0 :: Double), "result" .= v, "id" .= Null]
 
-instance FromJSON JsonRpcResult where
-   parseJSON (Object v) = JsonRpcResult
+instance FromJSON JsonRpcResponse where
+   parseJSON (Object v) = JsonRpcResponse
                       <$> v .: "result"
    parseJSON _          = mzero
+
+------------------------------------------------------------------------------------------
+
+-- It might 
+data JsonRpcCall :: * -> * where
+  JsonRpcCall :: FromJSON a => JsonRpcRequest -> JsonRpcCall a
 
 ------------------------------------------------------------------------------------------
 {-
