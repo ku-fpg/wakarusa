@@ -19,6 +19,16 @@ import Control.Category((.))
 import Control.Wakarusa.Session
 import Control.Wakarusa.Functor
 
+
+------------------------------------------------------------------------------------------
+
+class JsonRpc f where
+  -- These are both natural transformations
+  encodeRpcCall :: f a                                   -> JsonRpcCall a       -- always works
+  decodeRpcCall :: Send JsonRpcRequest JsonRpcResponse a -> MONAD f a           -- can fail
+
+-- decodeRpcCall . encodeRpcCall  == liftNM
+
 ------------------------------------------------------------------------------------------
 -- This is our basic JsonRpc API. It is a reflection of the Session API.
 -- Notice how we can send and receive multiple calls, as in the JSON RPC API.
@@ -38,7 +48,6 @@ class (Monad f, Sender f [JsonRpcRequest] [JsonRpcResponse]) => JsonRpcr f
 
 class (Monad f, Sender f JsonRpcRequest JsonRpcResponse) => JsonSingleRpcr f
 
-
 ------------------------------------------------------------------------------------------
 -- Example defintion
 
@@ -54,36 +63,24 @@ instance Squarer Square where
 instance Lift h => Squarer (h Square) where
   square n = lift $$ square n
 
-{-
+instance JsonRpc Square where
+  encodeRpcCall (Square n) = JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
+  decodeRpcCall (Send (JsonRpcRequest "square" [v])) = 
+                   do Success v' <- return (fromJSON v)
+                      r <- square v'
+                      return $ JsonRpcResponse $ toJSON $ r
 
-instance Close JsonRpcCall where
-  close = JsonRpcClose
-
-instance SquareClass JsonRpcCall where
-  square n = JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
-
-instance Lift h => SquareClass (h JsonRpcCall) where
-  square n = lift $$ square n
-
--}
-
-class JsonRpc f where
-  encodeRpcCall :: f a           -> JsonRpcCall a       -- always works
-  decodeRpcCall :: JsonRpcCall a -> MONAD f a           -- can fail
-  
--- encoding what Square does
-runSquare :: Square :~> JsonRpcCall
-runSquare = Nat $ \ f -> case f of
-    Square n -> JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
-
+------------------------------------------------------------------------------------------
+-- running the applicative
+                      
 data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
   ApNAF :: A t (y -> z) -> t y -> A t z
 
-runFunctor :: forall f g . (JsonRpc f, JsonRpcr g, Monad g) => (FUNCTOR f :~> g)
+runFunctor :: forall f g . (JsonRpc f, JsonRpcr g) => (FUNCTOR f :~> g)
 runFunctor  = runApplicative . f2a
 
-runApplicative :: forall f g . (JsonRpc f, JsonRpcr g, Monad g) => (APPLICATIVE f :~> g)
+runApplicative :: forall f g . (JsonRpc f, JsonRpcr g) => (APPLICATIVE f :~> g)
 runApplicative  = Nat $ \ f -> do 
    let naf = foldNAF PureNAF ApNAF f
    let fn :: JsonRpcr g => A f a -> [JsonRpcRequest] -> g ([JsonRpcResponse],a)
@@ -137,9 +134,9 @@ data JsonRpcCall :: * -> * where
   JsonRpcCall :: (ToJSON a, FromJSON a) => JsonRpcRequest -> JsonRpcCall a
   JsonRpcClose :: JsonRpcCall ()
 
-{-
-
 ------------------------------------------------------------------------------------------
+{-
+        
 
 class JsonRpcMatch f where
   rpcMatch :: JsonRpcCall a -> MONAD f a
@@ -152,11 +149,15 @@ instance JsonRpcMatch Square where
                       return r
 
 ------------------------------------------------------------------------------------------
+-}
 
-server :: (Functor f, JsonRpcClass f) => (SyncSendD [JsonRpcRequest] [JsonRpcResponse]) :~> f
+server :: (JsonRpc f) => (Send [JsonRpcRequest] [JsonRpcResponse]) :~> MONAD f
 server = Nat $ \ f -> case f of
-   SyncSend msg -> fmap Just (sendJsonRpc msg)
+   Send msgs -> sequence [ decodeRpcCall (Send msg)
+                         | msg <- msgs
+                         ]
 
+{-
 {-
 splitRpcCall :: JsonRpc :~> MONAD JsonRpcCall
 splitRpcCall = Nat fn
