@@ -3,18 +3,24 @@ module Control.Wakarusa.Session where
 
 import Data.ByteString (ByteString)
 import Control.Applicative
+import Control.Monad.ConstrainedNormal
+
+import Control.Wakarusa.Functor
 
 --import Control.Natural (Natural)
 
 class Close f where
   -- | It is polite to tell a session that you are closing
   close :: f ()
+  
+instance (Lift h, Close f) => Close (h f) where
+  close = lift close
 
 class AsyncSend f where
   asyncSend :: msg -> f msg ()
 
 class SyncSend f where
-  syncSend :: msg -> f msg (Maybe reply)
+  syncSend :: msg -> f msg reply (Maybe reply)
 
 {-
 -- | The 'Session' is our interface for sending and receiving ByteString messages over a network.
