@@ -25,10 +25,13 @@ import Control.Wakarusa.Functor
 
 data JsonRpc :: * -> * where
   SendJsonRpc  :: [JsonRpcRequest] -> JsonRpc [JsonRpcResponse]
-  CloseJsonRpc ::                  JsonRpc ()
+  CloseJsonRpc ::                     JsonRpc ()
 
 class Close f => JsonRpcClass f where
   sendJsonRpc :: [JsonRpcRequest] -> f [JsonRpcResponse]
+
+instance (JsonRpcClass f, Lift h) => JsonRpcClass (h f) where
+  sendJsonRpc n = lift $$ sendJsonRpc n
 
 ------------------------------------------------------------------------------------------
 
@@ -40,6 +43,9 @@ class SquareClass f where
 
 instance SquareClass Square where
   square = Square
+
+instance Lift h => SquareClass (h Square) where
+  square n = lift $$ square n
 
 instance Close JsonRpcCall where
   close = JsonRpcClose
@@ -112,12 +118,49 @@ instance FromJSON JsonRpcResponse where
 -- This is the generic version of a JSON RPC Call.
 
 data JsonRpcCall :: * -> * where
-  JsonRpcCall :: FromJSON a => JsonRpcRequest -> JsonRpcCall a
+  JsonRpcCall :: (ToJSON a, FromJSON a) => JsonRpcRequest -> JsonRpcCall a
   JsonRpcClose :: JsonRpcCall ()
 
 ------------------------------------------------------------------------------------------
 
--- :: Natural (Session ) JsonRpcCall
+class JsonRpcMatch f where
+  rpcMatch :: JsonRpcCall a -> MONAD f a
+
+instance JsonRpcMatch Square where
+   rpcMatch (JsonRpcCall (JsonRpcRequest "square" [v])) = 
+                   do Success v' <- return (fromJSON v)
+                      r <- square v'
+                      Success r <- return (fromJSON (toJSON v))
+                      return r
+
+------------------------------------------------------------------------------------------
+
+server :: (Functor f, JsonRpcClass f) => (SyncSendD [JsonRpcRequest] [JsonRpcResponse]) :~> f
+server = Nat $ \ f -> case f of
+   SyncSend msg -> fmap Just (sendJsonRpc msg)
+
+{-
+splitRpcCall :: JsonRpc :~> MONAD JsonRpcCall
+splitRpcCall = Nat fn
+  where fn :: JsonRpc a -> MONAD JsonRpcCall a
+        fn (SendJsonRpc calls) = do rep <- 
+--dispatchSquare = Nat $ \ f -> case f of
+--   SendJsonRpc msg -> undefined -- $ \ f -> case f of {}
+-}
+
+match :: JsonRpcCall :~> MONAD Square
+match = Nat rpcMatch
+   
+-- This will be an overloading
+dispatchSquare :: Square :~> IO
+dispatchSquare = Nat fn
+  where
+    fn :: Square a -> IO a 
+    fn (Square n) = return (n * n)
+
+
+--            do print $ "calling square (" ++ show n ")"
+                
 
 {-
 jsonRpcClient :: Natural JsonRpc (FUNCTOR (Session LBS.ByteString))
