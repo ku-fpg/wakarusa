@@ -27,7 +27,7 @@ data JsonRpc :: * -> * where
   SendJsonRpc  :: [JsonRpcRequest] -> JsonRpc [JsonRpcResponse]
   CloseJsonRpc ::                  JsonRpc ()
 
-class JsonRpcClass f where
+class Close f => JsonRpcClass f where
   sendJsonRpc :: [JsonRpcRequest] -> f [JsonRpcResponse]
 
 ------------------------------------------------------------------------------------------
@@ -41,9 +41,15 @@ class SquareClass f where
 instance SquareClass Square where
   square = Square
 
+instance Close JsonRpcCall where
+  close = JsonRpcClose
+
 instance SquareClass JsonRpcCall where
   square n = JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
 
+instance Lift h => SquareClass (h JsonRpcCall) where
+  square = lift . square 
+  
 -- encoding what Square does
 runSquare :: Square :~> JsonRpcCall
 runSquare = Nat $ \ f -> case f of
@@ -104,11 +110,16 @@ instance FromJSON JsonRpcResponse where
 
 ------------------------------------------------------------------------------------------
 
--- It might 
+-- This is the generic version of a JSON RPC Call.
+
 data JsonRpcCall :: * -> * where
   JsonRpcCall :: FromJSON a => JsonRpcRequest -> JsonRpcCall a
+  JsonRpcClose :: JsonRpcCall ()
 
 ------------------------------------------------------------------------------------------
+
+-- :: Natural (Session ) JsonRpcCall
+
 {-
 jsonRpcClient :: Natural JsonRpc (FUNCTOR (Session LBS.ByteString))
 jsonRpcClient = Natural $ \ f ->
