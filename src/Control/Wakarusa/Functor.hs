@@ -25,7 +25,6 @@ instance Lift APPLICATIVE where
 instance Lift MONAD where
   lift = Nat liftNM
 
-
 ---------------------------------------------------------------------------
 type FUNCTOR = NF Unconstrained
 
@@ -45,12 +44,13 @@ instance Functor1 (NM c) where
   fmap1 o = Nat $ foldNM return $ \ tx x_r -> liftNM (o $$ tx) >>= x_r
 
 ---------------------------------------------------------------------------
+-- Assumes 7.10-like thinking here
 
-f2a :: FUNCTOR f :~> APPLICATIVE f
-f2a = Nat $ foldNF $ \ x_a tx -> fmap x_a (liftNAF tx)
+f2a :: (Lift g, Functor (g f)) => FUNCTOR f :~> g f
+f2a = Nat $ foldNF $ \ x_a tx -> fmap x_a (lift $$ tx)
 
-a2m :: APPLICATIVE f :~> MONAD f
-a2m = Nat $ foldNAF return $ \ ryz ty -> ryz <*> liftNM ty
+a2m :: (Lift g, Applicative (g f)) => APPLICATIVE f :~> g f
+a2m = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (lift $$ ty)
 
 ---------------------------------------------------------------------------
 
