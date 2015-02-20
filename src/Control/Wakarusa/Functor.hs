@@ -12,6 +12,23 @@ class Functor1 h where
  fmap1 :: (f :~> g) -> (h f :~> h g)
 
 ---------------------------------------------------------------------------
+
+class Lift f where
+  lift :: g a -> f g a
+
+instance Lift FUNCTOR where
+  lift = liftNF
+
+instance Lift APPLICATIVE where
+  lift = liftNAF
+
+instance Lift MONAD where
+  lift = liftNM
+
+liftNT :: Lift h => (m :~> h m)
+liftNT = Nat lift
+
+---------------------------------------------------------------------------
 type FUNCTOR = NF Unconstrained
 
 nf :: m :~> FUNCTOR m
