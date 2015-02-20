@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE UndecidableInstances, FunctionalDependencies, TypeOperators, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Wakarusa.Session where
 
 import Data.ByteString (ByteString)
@@ -10,30 +10,31 @@ import Control.Natural
 import Control.Wakarusa.Functor
 
 --import Control.Natural (Natural)
+---------------------------------------------------------------------------------
 
-class Close f where
+class Closer f where
   -- | It is polite to tell a session that you are closing
   close :: f ()
   
-instance (Lift h, Close f) => Close (h f) where
+instance (Lift h, Closer f) => Closer (h f) where
   close = lift $$ close
 
-class AsyncSend f where
-  asyncSend :: msg -> f msg ()
+data Close :: * -> * where
+  Close :: Close ()
 
-class SyncSend f where
-  syncSend :: msg -> f msg reply (Maybe reply)
+instance Closer Close where
+  close = Close
 
-data SyncSendD :: * -> * -> * -> * where
-  SyncSend :: msg -> SyncSendD msg reply (Maybe reply)
+---------------------------------------------------------------------------------
 
-instance SyncSend SyncSendD where
-  syncSend = SyncSend
+class Sender f msg reply | f -> msg, f -> reply where
+  send :: msg -> f reply
 
--- | The 'Session' is our interface for sending and receiving ByteString messages over a network.
--- Clients build on top of 'Natural' ('Session' 'ByteString') m; Servers build 'Natural' ('Session' 'ByteString') m.
+instance (Lift h, Sender f msg repl) => Sender (h f) msg repl where
+  send msg = lift $$ send msg
 
-data Session :: * -> * -> * -> * where
-  Send  :: msg -> Session msg repl repl              -- Messages that have a reply
-  Close ::        Session msg repl ()                -- Last action; can free session resourses.
-        
+data Send :: * -> * -> * -> * where
+  Send  :: msg -> Send msg repl repl              -- Messages that have a reply
+
+instance Sender (Send msg repl) msg repl where
+  send = Send

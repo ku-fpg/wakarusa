@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, TypeOperators, OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Wakarusa.JsonRpc where
         
 import Prelude hiding ((.))
@@ -22,7 +22,7 @@ import Control.Wakarusa.Functor
 ------------------------------------------------------------------------------------------
 -- This is our basic JsonRpc API. It is a reflection of the Session API.
 -- Notice how we can send and receive multiple calls, as in the JSON RPC API.
-
+{-
 data JsonRpc :: * -> * where
   SendJsonRpc  :: [JsonRpcRequest] -> JsonRpc [JsonRpcResponse]
   CloseJsonRpc ::                     JsonRpc ()
@@ -32,20 +32,29 @@ class Close f => JsonRpcClass f where
 
 instance (JsonRpcClass f, Lift h) => JsonRpcClass (h f) where
   sendJsonRpc n = lift $$ sendJsonRpc n
+-}
+
+class (Monad f, Sender f [JsonRpcRequest] [JsonRpcResponse]) => JsonRpcr f
+
+class (Monad f, Sender f JsonRpcRequest JsonRpcResponse) => JsonSingleRpcr f
+
 
 ------------------------------------------------------------------------------------------
+-- Example defintion
 
 data Square :: * -> * where
  Square :: Int -> Square Int      -- (remotely) square a number
 
-class SquareClass f where
+class Squarer f where
   square :: Int -> f Int         
 
-instance SquareClass Square where
+instance Squarer Square where
   square = Square
 
-instance Lift h => SquareClass (h Square) where
+instance Lift h => Squarer (h Square) where
   square n = lift $$ square n
+
+{-
 
 instance Close JsonRpcCall where
   close = JsonRpcClose
@@ -55,6 +64,12 @@ instance SquareClass JsonRpcCall where
 
 instance Lift h => SquareClass (h JsonRpcCall) where
   square n = lift $$ square n
+
+-}
+
+class JsonRpc f where
+  encodeRpcCall :: f a           -> JsonRpcCall a       -- always works
+  decodeRpcCall :: JsonRpcCall a -> MONAD f a           -- can fail
   
 -- encoding what Square does
 runSquare :: Square :~> JsonRpcCall
@@ -65,27 +80,28 @@ data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
   ApNAF :: A t (y -> z) -> t y -> A t z
 
-runFunctor :: forall f g . (JsonRpcClass g, Monad g) => (FUNCTOR JsonRpcCall :~> g)
+runFunctor :: forall f g . (JsonRpc f, JsonRpcr g, Monad g) => (FUNCTOR f :~> g)
 runFunctor  = runApplicative . f2a
 
-runApplicative :: forall f g . (JsonRpcClass g, Monad g) => (APPLICATIVE JsonRpcCall :~> g)
-runApplicative  = Nat $ \ f -> do
+runApplicative :: forall f g . (JsonRpc f, JsonRpcr g, Monad g) => (APPLICATIVE f :~> g)
+runApplicative  = Nat $ \ f -> do 
    let naf = foldNAF PureNAF ApNAF f
-   let fn :: JsonRpcClass g => A JsonRpcCall a -> [JsonRpcRequest] -> g ([JsonRpcResponse],a)
-       fn (PureNAF a) xs = do res <- sendJsonRpc (reverse xs)
+   let fn :: JsonRpcr g => A f a -> [JsonRpcRequest] -> g ([JsonRpcResponse],a)
+       fn (PureNAF a) xs = do res <- send (reverse xs)
                               return (reverse res,a)
-       fn (ApNAF g a) xs = case a of
+       fn (ApNAF g a) xs = case encodeRpcCall a of
                              JsonRpcCall call -> do
                               (JsonRpcResponse y : ys,r) <- fn g (call : xs)
                               case fromJSON y of
                                 Error {} -> error $ "failed"
                                 Success v -> return (ys, r v)
+
    (_,a) <- fn naf []
    return a
 
-runMonad :: forall f g . (JsonRpcClass g, Monad g) => (MONAD JsonRpcCall :~> g)
+runMonad :: forall f g . (JsonRpc f, JsonRpcr g) => (MONAD f :~> g)
 runMonad = Nat $ \ f -> foldNM return bind f
-   where bind :: forall x x1 . JsonRpcClass g => JsonRpcCall x1 -> (x1 -> g x) -> g x
+   where bind :: forall x x1 . JsonRpcr g => f x1 -> (x1 -> g x) -> g x
          bind m k = do r <- runFunctor $$ liftNF m
                        k r
 
@@ -120,6 +136,8 @@ instance FromJSON JsonRpcResponse where
 data JsonRpcCall :: * -> * where
   JsonRpcCall :: (ToJSON a, FromJSON a) => JsonRpcRequest -> JsonRpcCall a
   JsonRpcClose :: JsonRpcCall ()
+
+{-
 
 ------------------------------------------------------------------------------------------
 
@@ -218,4 +236,5 @@ instance JsonRpcAPI Square where
 -- APPLICATIVE Square
 
 
+-}
 -}
