@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE PolyKinds, TypeOperators, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Wakarusa.Functor where
 
 import Control.Monad.ConstrainedNormal
@@ -13,8 +13,10 @@ class Functor1 h where
 
 ---------------------------------------------------------------------------
 
-class Lift f where
-  lift :: g a -> f g a
+class Lift f where 
+  lift  :: g a -> f g a
+  lift' :: g :~> f g
+  lift' = Nat lift
 
 instance Lift FUNCTOR where
   lift = liftNF
@@ -28,29 +30,29 @@ instance Lift MONAD where
 liftNT :: Lift h => (m :~> h m)
 liftNT = Nat lift
 
+--instance Lift (f (:~>)) where
+---  lift = error "X" :: () -> ()
+
+--- m a -> t m a
+--- m a -> t m a
+
+lift'' :: (g :~> f g) -> g a -> f g a
+lift'' o = (o $$)
+
 ---------------------------------------------------------------------------
 type FUNCTOR = NF Unconstrained
 
-nf :: m :~> FUNCTOR m
-nf = Nat liftNF
-
-instance Functor1 (NF c) where
- fmap1 o = Nat $ foldNF $ \ x_a tx -> fmap x_a (liftNF (o $$ tx))
+instance Functor1 FUNCTOR where
+ fmap1 o = Nat $ foldNF $ \ x_a tx -> fmap x_a (lift' $$ o $$ tx)
 
 ---------------------------------------------------------------------------
 type APPLICATIVE = NAF Unconstrained
-
-naf :: m :~> APPLICATIVE m
-naf = Nat liftNAF
 
 instance Functor1 (NAF c) where
  fmap1 o = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> liftNAF (o $$ ty)
 
 ---------------------------------------------------------------------------
 type MONAD = NM Unconstrained
-
-nm :: m :~> MONAD m
-nm = Nat liftNM
 
 instance Functor1 (NM c) where
   fmap1 o = Nat $ foldNM return $ \ tx x_r -> liftNM (o $$ tx) >>= x_r
