@@ -14,36 +14,23 @@ class Functor1 h where
 ---------------------------------------------------------------------------
 
 class Lift f where 
-  lift  :: g a -> f g a
-  lift' :: g :~> f g
-  lift' = Nat lift
+  lift :: g :~> f g
 
 instance Lift FUNCTOR where
-  lift = liftNF
+  lift = Nat liftNF
 
 instance Lift APPLICATIVE where
-  lift = liftNAF
+  lift = Nat liftNAF
 
 instance Lift MONAD where
-  lift = liftNM
+  lift = Nat liftNM
 
-liftNT :: Lift h => (m :~> h m)
-liftNT = Nat lift
-
---instance Lift (f (:~>)) where
----  lift = error "X" :: () -> ()
-
---- m a -> t m a
---- m a -> t m a
-
-lift'' :: (g :~> f g) -> g a -> f g a
-lift'' o = (o $$)
 
 ---------------------------------------------------------------------------
 type FUNCTOR = NF Unconstrained
 
 instance Functor1 FUNCTOR where
- fmap1 o = Nat $ foldNF $ \ x_a tx -> fmap x_a (lift' $$ o $$ tx)
+ fmap1 o = Nat $ foldNF $ \ x_a tx -> fmap x_a (lift $$ o $$ tx)
 
 ---------------------------------------------------------------------------
 type APPLICATIVE = NAF Unconstrained

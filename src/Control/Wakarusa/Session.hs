@@ -5,6 +5,8 @@ import Data.ByteString (ByteString)
 import Control.Applicative
 import Control.Monad.ConstrainedNormal
 
+import Control.Natural
+
 import Control.Wakarusa.Functor
 
 --import Control.Natural (Natural)
@@ -14,7 +16,7 @@ class Close f where
   close :: f ()
   
 instance (Lift h, Close f) => Close (h f) where
-  close = lift close
+  close = lift $$ close
 
 class AsyncSend f where
   asyncSend :: msg -> f msg ()

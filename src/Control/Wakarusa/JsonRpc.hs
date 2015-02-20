@@ -48,7 +48,7 @@ instance SquareClass JsonRpcCall where
   square n = JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
 
 instance Lift h => SquareClass (h JsonRpcCall) where
-  square = lift . square 
+  square n = lift $$ square n
   
 -- encoding what Square does
 runSquare :: Square :~> JsonRpcCall
@@ -82,7 +82,6 @@ runMonad = Nat $ \ f -> foldNM return bind f
    where bind :: forall x x1 . JsonRpcClass g => JsonRpcCall x1 -> (x1 -> g x) -> g x
          bind m k = do r <- runFunctor $$ liftNF m
                        k r
-
 
 ------------------------------------------------------------------------------------------
 -- These encode how the JSON RPC uses JSON
