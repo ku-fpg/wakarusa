@@ -25,6 +25,8 @@ import Control.Wakarusa.Functor
 class JsonRpc f where
   -- These are both natural transformations
   encodeRpcCall :: f a                                   -> JsonRpcCall a       -- always works
+  encodeRpcCall' :: f a  -> Send JsonRpcRequest JsonRpcResponse a       -- always works
+
   decodeRpcCall :: Send JsonRpcRequest JsonRpcResponse a -> MONAD f a           -- can fail
 
 -- decodeRpcCall . encodeRpcCall  == liftNM
