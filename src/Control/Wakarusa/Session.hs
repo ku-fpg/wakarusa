@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Wakarusa.Session where
 
 import Data.ByteString (ByteString)
@@ -23,6 +23,12 @@ class AsyncSend f where
 
 class SyncSend f where
   syncSend :: msg -> f msg reply (Maybe reply)
+
+data SyncSendD :: * -> * -> * -> * where
+  SyncSend :: msg -> SyncSendD msg reply (Maybe reply)
+
+instance SyncSend SyncSendD where
+  syncSend = SyncSend
 
 {-
 -- | The 'Session' is our interface for sending and receiving ByteString messages over a network.
