@@ -24,9 +24,7 @@ import Control.Wakarusa.Functor
 
 class JsonRpc f where
   -- These are both natural transformations
-  encodeRpcCall :: f a                                   -> JsonRpcCall a       -- always works
-  encodeRpcCall' :: f a  -> Send JsonRpcRequest JsonRpcResponse a       -- always works
-
+  encodeRpcCall :: f a  -> JsonRpcCall a       -- always works
   decodeRpcCall :: Send JsonRpcRequest JsonRpcResponse a -> MONAD f a           -- can fail
 
 -- decodeRpcCall . encodeRpcCall  == liftNM
@@ -65,12 +63,20 @@ instance Squarer Square where
 instance Lift h => Squarer (h Square) where
   square n = lift $$ square n
 
+call nm args = JsonRpcCall $ JsonRpcRequest nm args
+
+get a = do Success v <- return (fromJSON a)
+           return v
+           
+result :: (ToJSON a) => a -> JsonRpcResponse
+result = JsonRpcResponse . toJSON 
+
 instance JsonRpc Square where
-  encodeRpcCall (Square n) = JsonRpcCall $ JsonRpcRequest "square" [toJSON n]
+  encodeRpcCall (Square n) = call "square" [toJSON n]
   decodeRpcCall (Send (JsonRpcRequest "square" [v])) = 
-                   do Success v' <- return (fromJSON v)
+                   do v' <- get v
                       r <- square v'
-                      return $ JsonRpcResponse $ toJSON $ r
+                      return (result r)
 
 ------------------------------------------------------------------------------------------
 -- running the applicative
@@ -130,11 +136,10 @@ instance FromJSON JsonRpcResponse where
 
 ------------------------------------------------------------------------------------------
 
--- This is the generic version of a JSON RPC Call.
+-- This is the generic version of a JSON RPC Call: fmap (...) (...)
 
 data JsonRpcCall :: * -> * where
-  JsonRpcCall :: (ToJSON a, FromJSON a) => JsonRpcRequest -> JsonRpcCall a
-  JsonRpcClose :: JsonRpcCall ()
+  JsonRpcCall :: FromJSON a => JsonRpcRequest -> JsonRpcCall a
 
 ------------------------------------------------------------------------------------------
 {-
