@@ -6,6 +6,8 @@ import Control.Applicative
 import Control.Natural
 
 ---------------------------------------------------------------------------
+-- | `Functor1` is the high-kinded version of Functor.
+
 class Functor1 h where
  fmap1 :: (f :~> g) -> (h f :~> h g)
 
@@ -35,4 +37,12 @@ nm = Nat liftNM
 
 instance Functor1 (NM c) where
   fmap1 o = Nat $ foldNM return $ \ tx x_r -> liftNM (o $$ tx) >>= x_r
+
+---------------------------------------------------------------------------
+
+f2a :: FUNCTOR f :~> APPLICATIVE f
+f2a = Nat $ foldNF $ \ x_a tx -> fmap x_a (liftNAF tx)
+
+a2m :: APPLICATIVE f :~> MONAD f
+a2m = Nat $ foldNAF return $ \ ryz ty -> ryz <*> liftNM ty
 
