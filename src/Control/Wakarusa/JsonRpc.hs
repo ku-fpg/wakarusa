@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeOperators, OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Wakarusa.JsonRpc where
         
+import Prelude hiding ((.))
 import Control.Natural
 import Data.Aeson as A
 import Data.Text(Text)
@@ -13,6 +14,7 @@ import Control.Monad (mzero)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Scientific
+import Control.Category((.))
 
 import Control.Wakarusa.Session
 import Control.Wakarusa.Functor
@@ -51,6 +53,9 @@ data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
   ApNAF :: A t (y -> z) -> t y -> A t z
 
+runFunctor :: forall f g . (JsonRpcClass g, Monad g) => (FUNCTOR JsonRpcCall :~> g)
+runFunctor  = runApplicative . f2a
+
 runApplicative :: forall f g . (JsonRpcClass g, Monad g) => (APPLICATIVE JsonRpcCall :~> g)
 runApplicative  = Nat $ \ f -> do
    let naf = foldNAF PureNAF ApNAF f
@@ -65,6 +70,12 @@ runApplicative  = Nat $ \ f -> do
                                 Success v -> return (ys, r v)
    (_,a) <- fn naf []
    return a
+
+runMonad :: forall f g . (JsonRpcClass g, Monad g) => (MONAD JsonRpcCall :~> g)
+runMonad = Nat $ \ f -> foldNM return bind f
+   where bind :: forall x x1 . JsonRpcClass g => JsonRpcCall x1 -> (x1 -> g x) -> g x
+         bind m k = do r <- runFunctor $$ liftNF m
+                       k r
 
 
 ------------------------------------------------------------------------------------------
