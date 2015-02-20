@@ -46,3 +46,18 @@ f2a = Nat $ foldNF $ \ x_a tx -> fmap x_a (liftNAF tx)
 a2m :: APPLICATIVE f :~> MONAD f
 a2m = Nat $ foldNAF return $ \ ryz ty -> ryz <*> liftNM ty
 
+---------------------------------------------------------------------------
+
+joinFunctor :: (Functor f) => (FUNCTOR f :~> f)
+joinFunctor = Nat $ foldNF (\ x_a tx -> fmap x_a tx) 
+
+--joinFunctor :: (Functor g) => (f :~> g) -> (FUNCTOR f :~> g)
+--joinFunctor o = Nat $ foldNF $ \ x_a tx -> fmap x_a (o $$ tx)
+
+joinApplicative :: (Applicative g) => (f :~> g) -> (APPLICATIVE f :~> g)
+joinApplicative o = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (o $$ ty)
+
+joinMonad :: (Monad g) => (f :~> g) -> (MONAD f :~> g)
+joinMonad o = Nat $ foldNM return $ \ tx x_r -> (o $$ tx) >>= x_r
+
+
