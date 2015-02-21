@@ -46,6 +46,8 @@ instance (JsonRpcClass f, Lift h) => JsonRpcClass (h f) where
 
 class (Monad f, Sender f [JsonRpcRequest] [JsonRpcResponse]) => JsonRpcr f
 
+instance JsonRpcr (MONAD (Send [JsonRpcRequest] [JsonRpcResponse])) -- funny feeling about this 
+
 class (Monad f, Sender f JsonRpcRequest JsonRpcResponse) => JsonSingleRpcr f
 
 ------------------------------------------------------------------------------------------
@@ -84,6 +86,10 @@ instance JsonRpc Square where
 data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
   ApNAF :: A t (y -> z) -> t y -> A t z
+
+-- The simple one; no structure around f.
+runId :: forall f g . (JsonRpc f, JsonRpcr g) => (f :~> g)
+runId  = runApplicative . f2a . lift
 
 runFunctor :: forall f g . (JsonRpc f, JsonRpcr g) => (FUNCTOR f :~> g)
 runFunctor  = runApplicative . f2a

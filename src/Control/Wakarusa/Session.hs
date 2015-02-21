@@ -34,7 +34,8 @@ instance (Lift h, Sender f msg repl) => Sender (h f) msg repl where
   send msg = lift $$ send msg
 
 data Send :: * -> * -> * -> * where
-  Send  :: msg -> Send msg repl repl              -- Messages that have a reply
+  Send  :: msg -> Send msg repl repl -- Messages that have a reply; 
+                                     -- implies we've tied msg and repl together (somehow)
 
 instance Sender (Send msg repl) msg repl where
   send = Send
