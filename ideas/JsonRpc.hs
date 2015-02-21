@@ -16,15 +16,19 @@ evalSquare = Nat $ \ f -> case f of
 
 type Id x = x :~> x
 
-
-myApp :: Square :~> IO
+myApp :: MONAD Square :~> IO
 myApp = joinMonad evalSquare -- eval 
       . joinMonad server     -- parse
       . id                   -- network
-      . runId                -- eval the embedded method call
+      . runMonad             -- eval the embedded method call
 
 main = do
-  r <- myApp $$ Square 4
+  r <- myApp $$ square 4
+  r <- myApp $$ square r
+  print r
+  r <- myApp # do
+          a <- square 4
+          square a
   print r
   
 
