@@ -27,15 +27,26 @@ instance Closer Close where
 
 ---------------------------------------------------------------------------------
 
-class Sender f msg reply | f -> msg, f -> reply where
+class Sender msg reply f | f -> msg, f -> reply where
   send :: msg -> f reply
 
-instance (Lift h, Sender f msg repl) => Sender (h f) msg repl where
+instance (Lift h, Sender msg repl f) => Sender msg repl (h f) where
   send msg = lift $$ send msg
 
 data Send :: * -> * -> * -> * where
   Send  :: msg -> Send msg repl repl -- Messages that have a reply; 
                                      -- implies we've tied msg and repl together (somehow)
-
-instance Sender (Send msg repl) msg repl where
+instance Sender msg repl (Send msg repl) where
   send = Send
+
+--recv_ :: (Send [JsonRpcRequest] [JsonRpcResponse] t1 -> t4 t1) -> JsonRpcSend t1 -> t4 t1
+
+class Sendee msg reply f | f -> msg, f -> reply where
+  recv :: f a -> Send msg reply a
+
+instance Sendee msg repl (Send msg repl) where
+  recv msg = msg
+  
+--data Recv :: * -> * -> * -> * where
+--  Recv ::         
+
