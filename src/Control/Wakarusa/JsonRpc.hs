@@ -101,8 +101,9 @@ runMonad = Nat $ \ f -> foldNM return bind f
 
 ------------------------------------------------------------------------------------------
 
-
-
+network :: (Sendee [JsonRpcRequest] [JsonRpcResponse] f, Sendee [JsonRpcRequest] [JsonRpcResponse] g) => f :~> g
+network = Nat $ \ f -> case recv f of
+  Send msg -> undefined
 
 ------------------------------------------------------------------------------------------
 -- These encode how the JSON RPC uses JSON

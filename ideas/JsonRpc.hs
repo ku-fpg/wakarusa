@@ -40,10 +40,32 @@ type Id x = x :~> x
 myApp :: MONAD Square :~> IO
 myApp = joinMonad evalSquare -- eval 
       . joinMonad server     -- parse
-      . id                   -- network
+--      . joinMonad network    -- network
       . runMonad             -- eval the embedded method call
 
+myClient :: MONAD Square :~> MONAD JsonRpcSend
+myClient = runMonad
+
+myServer :: JsonRpcSend :~> IO
+myServer = joinMonad evalSquare -- eval 
+         . server               -- parse
+
+-- simulate the connect
+networker :: ( ToJSON req, FromJSON req'
+             , ToJSON resp', FromJSON resp
+             , Sendee req resp f
+             , Sender req' resp' f') 
+          => (f' :~> IO) -> IO (f :~> IO)
+networker o = return $ Nat $ \ f -> case recv f of
+  Send msg -> do Success msg' <- return (fromJSON (toJSON msg))
+                 rep <- o $$ send msg'
+                 Success rep' <- return (fromJSON (toJSON rep))
+                 return rep'
+
 main = do
+  session <- networker $ myServer
+  let myApp :: MONAD Square :~> IO
+      myApp = joinMonad session . runMonad
   r <- myApp $$ square 4
   r <- myApp $$ square r
   print r
