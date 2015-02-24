@@ -51,11 +51,10 @@ myServer = joinMonad evalSquare -- eval
          . server               -- parse
 
 -- simulate the connect
-networker :: ( ToJSON req, FromJSON req'
-             , ToJSON resp', FromJSON resp
-             , Sendee req resp f
-             , Sender req' resp' f') 
-          => (f' :~> IO) -> IO (f :~> IO)
+networker :: ( ToJSON   req,  FromJSON resp, Sendee req  resp  f
+             , FromJSON req', ToJSON resp',  Sender req' resp' f'
+             ) 
+          => (f' :~> IO) -> IO (f :~> IO)       
 networker o = return $ Nat $ \ f -> case recv f of
   Send msg -> do Success msg' <- return (fromJSON (toJSON msg))
                  rep <- o $$ send msg'
