@@ -38,15 +38,10 @@ data Send :: * -> * -> * -> * where
                                      -- implies we've tied msg and repl together (somehow)
 instance Sender msg repl (Send msg repl) where
   send = Send
-
---recv_ :: (Send [JsonRpcRequest] [JsonRpcResponse] t1 -> t4 t1) -> JsonRpcSend t1 -> t4 t1
-
+  
 class Sendee msg reply f | f -> msg, f -> reply where
   recv :: f a -> Send msg reply a
 
 instance Sendee msg repl (Send msg repl) where
   recv msg = msg
-  
---data Recv :: * -> * -> * -> * where
---  Recv ::         
 

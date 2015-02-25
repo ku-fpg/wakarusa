@@ -24,7 +24,7 @@ library
   other-extensions:    TypeFamilies, RankNTypes, GADTs, KindSignatures, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, FunctionalDependencies, UndecidableInstances, NullaryTypeClasses
   build-depends:       base >=4.7 && <4.8, transformers >=0.3 && <0.4,
                        unordered-containers, aeson, vector, text, constrained-normal, bytestring >= 0.10, scientific
-  hs-source-dirs:      src
+  hs-source-dirs:      src, scotty, wreq
   default-language:    Haskell2010
 
 executable jsonrpc:
@@ -32,6 +32,8 @@ executable jsonrpc:
     hs-source-dirs:     ideas
     Ghc-options:        -threaded
     Build-depends:      base >=4.7 && <4.8, transformers >=0.3 && <0.4,
-                        unordered-containers, aeson, vector, text, constrained-normal, bytestring >= 0.10, scientific, wakarusa
+                        unordered-containers, aeson, vector, text, constrained-normal, bytestring >= 0.10, scientific,
+                        scotty, wreq,
+                        wakarusa
 
     default-language:    Haskell2010
