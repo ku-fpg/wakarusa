@@ -22,8 +22,15 @@ library
 
   -- other-modules:       
   other-extensions:    TypeFamilies, RankNTypes, GADTs, KindSignatures, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, FunctionalDependencies, UndecidableInstances, NullaryTypeClasses
-  build-depends:       base >=4.7 && <4.8, transformers >=0.3 && <0.4,
-                       unordered-containers, aeson, vector, text, constrained-normal, bytestring >= 0.10, scientific
+  build-depends:       base >=4.7 && <4.8,
+                       transformers >=0.4 && <0.5,
+                       unordered-containers == 0.2.*, 
+                       aeson == 0.8.*, 
+                       vector == 0.10.*, 
+                       text == 1.2.*, 
+                       constrained-normal == 1.0.2, 
+                       bytestring == 0.10.*, 
+                       scientific == 0.3.*
   hs-source-dirs:      .
   default-language:    Haskell2010
 
