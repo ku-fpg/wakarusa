@@ -27,13 +27,13 @@ import Control.Wakarusa.Pointed1
 class JsonRpc f where
   -- These are both natural transformations
   encodeRpcCall :: f a  -> JsonRpcCall a       -- always works
-  decodeRpcCall :: Send JsonRpcRequest JsonRpcResponse a -> MONAD f a           -- can fail
+  decodeRpcCall :: JsonRpcCall a -> MONAD f a           -- can fail
 
 
 ------------------------------------------------------------------------------------------
 -- Small DSL for building JsonRpc instances
 
-call nm args = JsonRpcCall $ JsonRpcRequest nm args
+call nm args = JsonRpcCall nm args
 
 get a = do Success v <- return (fromJSON a)
            return v
@@ -71,8 +71,8 @@ runApplicative  = Nat $ \ f -> do
        fn (PureNAF a) xs = do res <- send (reverse xs)
                               return (reverse res,a)
        fn (ApNAF g a) xs = case encodeRpcCall a of
-                             JsonRpcCall call -> do
-                              (JsonRpcResponse y : ys,r) <- fn g (call : xs)
+                             JsonRpcCall f args -> do
+                              (JsonRpcResponse y : ys,r) <- fn g (JsonRpcRequest f args : xs)
                               case fromJSON y of
                                 Error {} -> error $ "failed"
                                 Success v -> return (ys, r v)
@@ -117,14 +117,14 @@ instance FromJSON JsonRpcResponse where
 -- This is the generic version of a JSON RPC Call: fmap (...) (...)
 
 data JsonRpcCall :: * -> * where
-  JsonRpcCall :: FromJSON a => JsonRpcRequest -> JsonRpcCall a
+  JsonRpcCall :: Text -> [Value] -> JsonRpcCall JsonRpcResponse
 
 ------------------------------------------------------------------------------------------
 
 rpcServer :: (JsonRpc f) => JsonRpcSend :~> MONAD f
 rpcServer = Nat $ \ f -> case f of
    JsonRpcSend (Send msgs) -> 
-                sequence [ decodeRpcCall (Send msg)
-                         | msg <- msgs
+                sequence [ decodeRpcCall $ JsonRpcCall f args
+                         | JsonRpcRequest f args <- msgs
                          ]
 

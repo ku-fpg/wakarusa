@@ -21,7 +21,7 @@ instance Pointed1 h => Squarer (h Square) where
 
 instance JsonRpc Square where
   encodeRpcCall (Square n) = call "square" [toJSON n]
-  decodeRpcCall (Send (JsonRpcRequest "square" [v])) = 
+  decodeRpcCall (JsonRpcCall "square" [v]) = 
                    do v' <- get v
                       r <- square v'
                       return (result r)
