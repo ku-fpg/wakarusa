@@ -55,13 +55,15 @@ data A :: (* -> *) -> * -> * where
   PureNAF :: a -> A t a
   ApNAF :: A t (y -> z) -> t y -> A t z
 
--- The simple one; no structure around f.
+-- | The simple one; no structure around f.
 runId :: forall f g . (JsonRpc f) => (f :~> MONAD JsonRpcSend)
 runId  = runApplicative . point1
 
+-- | The methods are functors
 runFunctor :: forall f g . (JsonRpc f) => (FUNCTOR f :~> MONAD JsonRpcSend)
 runFunctor  = runApplicative . run1 point1
 
+-- | The methods are applicative
 runApplicative :: forall f g . (JsonRpc f) => (APPLICATIVE f :~> MONAD JsonRpcSend)
 runApplicative  = Nat $ \ f -> do 
    let naf = foldNAF PureNAF ApNAF f
@@ -78,6 +80,7 @@ runApplicative  = Nat $ \ f -> do
    (_,a) <- fn naf []
    return a
 
+-- | The methods are monadic
 runMonad :: forall f g . (JsonRpc f) => (MONAD f :~> MONAD JsonRpcSend)
 runMonad = Nat $ \ f -> foldNM return bind f
    where bind :: forall x x1 . f x1 -> (x1 -> MONAD JsonRpcSend x) -> MONAD JsonRpcSend x
