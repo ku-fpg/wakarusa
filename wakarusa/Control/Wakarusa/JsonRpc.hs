@@ -109,7 +109,8 @@ network = Nat $ \ f -> case recv f of
 -- These encode how the JSON RPC uses JSON
 
 data JsonRpcRequest = JsonRpcRequest Text [Value]
-
+        deriving Show
+        
 instance ToJSON JsonRpcRequest where
    toJSON (JsonRpcRequest method args) = object ["jsonrpc" .= (2.0 :: Double), "method" .= method, "args" .= args, "id" .= Null]
 
@@ -120,6 +121,7 @@ instance FromJSON JsonRpcRequest where
    parseJSON _          = mzero
 
 data JsonRpcResponse = JsonRpcResponse Value
+        deriving Show
 
 instance ToJSON JsonRpcResponse where
    toJSON (JsonRpcResponse v) = object ["jsonrpc" .= (2.0 :: Double), "result" .= v, "id" .= Null]
