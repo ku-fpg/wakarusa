@@ -18,6 +18,7 @@ import Control.Category((.))
 
 import Control.Wakarusa.Session
 import Control.Wakarusa.Functor
+import Control.Wakarusa.Pointed1
 
 
 ------------------------------------------------------------------------------------------
@@ -72,7 +73,7 @@ data A :: (* -> *) -> * -> * where
 
 -- The simple one; no structure around f.
 runId :: forall f g . (JsonRpc f) => (f :~> MONAD JsonRpcSend)
-runId  = runApplicative . f2a . lift
+runId  = runApplicative . f2a . point1
 
 runFunctor :: forall f g . (JsonRpc f) => (FUNCTOR f :~> MONAD JsonRpcSend)
 runFunctor  = runApplicative . f2a

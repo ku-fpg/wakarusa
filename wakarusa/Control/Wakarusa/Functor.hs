@@ -1,35 +1,28 @@
 {-# LANGUAGE PolyKinds, TypeOperators, GADTs, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
 module Control.Wakarusa.Functor where
 
-import Control.Monad.ConstrainedNormal
 import Control.Applicative
+import Control.Monad.ConstrainedNormal
 import Control.Natural
 
----------------------------------------------------------------------------
--- | `Functor1` is the high-kinded version of Functor.
+import Control.Wakarusa.Functor1
+import Control.Wakarusa.Pointed1
 
-class Functor1 h where
- fmap1 :: (f :~> g) -> (h f :~> h g)
 
----------------------------------------------------------------------------
+instance Pointed1 FUNCTOR where
+  point1 = Nat liftNF
 
-class Lift f where 
-  lift :: g :~> f g
+instance Pointed1 APPLICATIVE where
+  point1 = Nat liftNAF
 
-instance Lift FUNCTOR where
-  lift = Nat liftNF
-
-instance Lift APPLICATIVE where
-  lift = Nat liftNAF
-
-instance Lift MONAD where
-  lift = Nat liftNM
+instance Pointed1 MONAD where
+  point1 = Nat liftNM
 
 ---------------------------------------------------------------------------
 type FUNCTOR = NF Unconstrained
 
 instance Functor1 FUNCTOR where
- fmap1 o = Nat $ foldNF $ \ x_a tx -> fmap x_a (lift $$ o $$ tx)
+ fmap1 o = Nat $ foldNF $ \ x_a tx -> fmap x_a (point1 $$ o $$ tx)
 
 ---------------------------------------------------------------------------
 type APPLICATIVE = NAF Unconstrained
@@ -46,11 +39,11 @@ instance Functor1 (NM c) where
 ---------------------------------------------------------------------------
 -- Assumes 7.10-like thinking here
 
-f2a :: (Lift g, Functor (g f)) => FUNCTOR f :~> g f
-f2a = Nat $ foldNF $ \ x_a tx -> fmap x_a (lift $$ tx)
+f2a :: (Pointed1 g, Functor (g f)) => FUNCTOR f :~> g f
+f2a = Nat $ foldNF $ \ x_a tx -> fmap x_a (point1 $$ tx)
 
-a2m :: (Lift g, Applicative (g f)) => APPLICATIVE f :~> g f
-a2m = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (lift $$ ty)
+a2m :: (Pointed1 g, Applicative (g f)) => APPLICATIVE f :~> g f
+a2m = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (point1 $$ ty)
 
 ---------------------------------------------------------------------------
 
