@@ -6,5 +6,5 @@ import Control.Natural
 ---------------------------------------------------------------------------
 -- | Pointed1 is the Natural Transformation version of Pointed.
 
-class Pointed1 f where 
-  point1 :: g :~> f g
+class Pointed1 h where 
+  point1 :: g :~> h g
