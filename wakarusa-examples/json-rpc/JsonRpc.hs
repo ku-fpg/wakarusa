@@ -42,7 +42,7 @@ networker o = return $ Nat $ \ f -> case recv f of
                  return rep'
 
 main = do
-  let session = wreqClient "http://httpbin.org/post" <<< foo1'
+  let session = wreqClient "http://localhost:3000/rpc" <<< foo1'
   let myApp :: MONAD Square :~> IO
       myApp = joinMonad session . runMonad
   r <- myApp $$ square 4

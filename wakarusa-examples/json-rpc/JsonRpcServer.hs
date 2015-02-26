@@ -44,10 +44,5 @@ networker o = return $ Nat $ \ f -> case recv f of
                  return rep'
 
 main = do
-  let s :: Send [JsonRpcRequest] [JsonRpcResponse] :~> IO
-      s = Nat $ \ f -> case f of
-               Send msg -> do
-                 print msg
-                 return []
-  let rule = scottyServer "/rpc" s
+  let rule = scottyServer "/rpc" myServer
   scotty 3000 rule
