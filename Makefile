@@ -4,6 +4,9 @@
 
 # install in sandbox
 boot:: sandbox
+	- (cd wakarusa          ; cabal sandbox hc-pkg unregister wakarusa-scotty )
+	- (cd wakarusa	      ; cabal sandbox hc-pkg unregister wakarusa-wreq )
+	- (cd wakarusa	      ; cabal sandbox hc-pkg unregister wakarusa-examples )
 	(cd wakarusa          ; cabal install )
 	(cd wakarusa-scotty   ; cabal install )
 	(cd wakarusa-wreq     ; cabal install )
