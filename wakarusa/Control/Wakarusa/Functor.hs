@@ -7,6 +7,7 @@ import Control.Natural
 
 import Control.Wakarusa.Functor1
 import Control.Wakarusa.Pointed1
+import Control.Wakarusa.Join1
 
 
 instance Pointed1 FUNCTOR where
@@ -37,36 +38,14 @@ instance Functor1 (NM c) where
   fmap1 o = Nat $ foldNM return $ \ tx x_r -> liftNM (o $$ tx) >>= x_r
 
 ---------------------------------------------------------------------------
--- Assumes 7.10-like thinking here
 
-f2a :: (Pointed1 g, Functor (g f)) => FUNCTOR f :~> g f
-f2a = Nat $ foldNF $ \ x_a tx -> fmap x_a (point1 $$ tx)
+instance Join1 FUNCTOR Functor where
+  join1 = Nat $ foldNF $ \ x_a tx -> fmap x_a tx
 
-a2m :: (Pointed1 g, Applicative (g f)) => APPLICATIVE f :~> g f
-a2m = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (point1 $$ ty)
+instance Join1 APPLICATIVE Applicative where
+  join1 = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> ty
 
----------------------------------------------------------------------------
-
-class Run1 h g where
-  run1 :: (f :~> g) -> (h f :~> g)
-
-instance Functor g => Run1 FUNCTOR g where
-   run1 = joinFunctor
-
-instance Applicative g => Run1 APPLICATIVE g where
-   run1 = joinApplicative
-
-instance Monad g => Run1 MONAD g where
-   run1 = joinMonad
-
-
-joinFunctor :: (Functor g) => (f :~> g) -> (FUNCTOR f :~> g)
-joinFunctor o = Nat $ foldNF $ \ x_a tx -> fmap x_a (o $$ tx)
-
-joinApplicative :: (Applicative g) => (f :~> g) -> (APPLICATIVE f :~> g)
-joinApplicative o = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (o $$ ty)
-
-joinMonad :: (Monad g) => (f :~> g) -> (MONAD f :~> g)
-joinMonad o = Nat $ foldNM return $ \ tx x_r -> (o $$ tx) >>= x_r
-
+instance Join1 MONAD Monad where
+  join1 = Nat $ foldNM return $ \ tx x_r -> tx >>= x_r
+    
 
