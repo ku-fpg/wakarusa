@@ -22,9 +22,8 @@ myClient = runMonad
 
 
 main = do
-  let session = wreqClient "http://localhost:3000/rpc"
   let myApp :: MONAD Square :~> IO
-      myApp = run1 session . runMonad
+      myApp = runMonad >>> run1 (wreqClient "http://localhost:3000/rpc")
   r <- myApp $$ square 4
   r <- myApp $$ square r
   print r
@@ -34,7 +33,7 @@ main = do
   print r
 
   let myApp :: APPLICATIVE Square :~> IO
-      myApp = run1 session . runApplicative
+      myApp = runApplicative >>> run1 (wreqClient "http://localhost:3000/rpc")
   r <- myApp $$ square 4
   r <- myApp $$ square r
   print r

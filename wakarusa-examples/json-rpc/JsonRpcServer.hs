@@ -18,10 +18,6 @@ import Web.Scotty
 
 import Square
 
-myServer :: JsonRpcSend :~> IO
-myServer =  rpcServer            -- parse
-        >>> run1 evalSquare      -- eval 
-
 main = do
-  let rule = scottyServer "/rpc" myServer
+  let rule = scottyServer "/rpc" $ rpcServer >>> run1 evalSquare
   scotty 3000 rule
