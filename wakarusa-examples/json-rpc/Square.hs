@@ -1,9 +1,10 @@
-{-# LANGUAGE FlexibleContexts, TypeOperators, OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators, KindSignatures, OverloadedStrings, GADTs, ScopedTypeVariables, MultiParamTypeClasses, FlexibleInstances #-}
 module Square where
 
 import Data.Aeson 
-import Control.Natural
+import Control.Natural  
 import Control.Wakarusa.Functor
+import Control.Wakarusa.Pointed1
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
         
@@ -16,8 +17,8 @@ class Squarer f where
 instance Squarer Square where
   square = Square
 
-instance Lift h => Squarer (h Square) where
-  square n = lift $$ square n
+instance Pointed1 h => Squarer (h Square) where
+  square n = point1 $$ square n
 
 instance JsonRpc Square where
   encodeRpcCall (Square n) = call "square" [toJSON n]

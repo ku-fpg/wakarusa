@@ -22,39 +22,15 @@ import Control.Wakarusa.Pointed1
 
 
 ------------------------------------------------------------------------------------------
-
+-- All sendable method calls are instances of 'JsonRpc'
 class JsonRpc f where
   -- These are both natural transformations
   encodeRpcCall :: f a  -> JsonRpcCall a       -- always works
   decodeRpcCall :: Send JsonRpcRequest JsonRpcResponse a -> MONAD f a           -- can fail
 
--- This is just an abstaction for clarity
-newtype JsonRpcSend a = JsonRpcSend (Send [JsonRpcRequest] [JsonRpcResponse] a)
-        deriving (Sender [JsonRpcRequest] [JsonRpcResponse])
-
-class (Monad f, Sender [JsonRpcRequest] [JsonRpcResponse] f) => JsonRpcr f
-
-instance JsonRpcr (MONAD (Send [JsonRpcRequest] [JsonRpcResponse])) -- funny feeling about this 
-
-foo1 :: JsonRpcSend :~> Send [JsonRpcRequest] [JsonRpcResponse]
-foo1 = Nat $ \ f -> case f of 
-   JsonRpcSend send -> send
-
-foo2 :: Send [JsonRpcRequest] [JsonRpcResponse] :~> JsonRpcSend 
-foo2 = Nat JsonRpcSend
-
-foo1' :: JsonRpcSend :~> Send [JsonRpcRequest] [JsonRpcResponse]
-foo1' = Nat $ recv
-
-instance Sendee [JsonRpcRequest] [JsonRpcResponse]JsonRpcSend where
-  recv (JsonRpcSend msg) = msg
-
--- Not used
---class (Monad f, Sender JsonRpcRequest JsonRpcResponse f) => JsonSingleRpcr f
 
 ------------------------------------------------------------------------------------------
--- Example defintion
-
+-- Small DSL for building JsonRpc instances
 
 call nm args = JsonRpcCall $ JsonRpcRequest nm args
 
@@ -63,6 +39,13 @@ get a = do Success v <- return (fromJSON a)
            
 result :: (ToJSON a) => a -> JsonRpcResponse
 result = JsonRpcResponse . toJSON 
+
+----------------------------------------------------------------------------------------
+-- | JsonRpcSend is a specialized verasion of 'Send'
+newtype JsonRpcSend a = JsonRpcSend (Send [JsonRpcRequest] [JsonRpcResponse] a)
+        deriving ( Sender [JsonRpcRequest] [JsonRpcResponse]
+                 , Sendee [JsonRpcRequest] [JsonRpcResponse]
+                 )
 
 ------------------------------------------------------------------------------------------
 -- running the applicative
@@ -101,12 +84,6 @@ runMonad = Nat $ \ f -> foldNM return bind f
                        k r
 
 ------------------------------------------------------------------------------------------
-
-network :: (Sendee [JsonRpcRequest] [JsonRpcResponse] f, Sendee [JsonRpcRequest] [JsonRpcResponse] g) => f :~> g
-network = Nat $ \ f -> case recv f of
-  Send msg -> undefined
-
-------------------------------------------------------------------------------------------
 -- These encode how the JSON RPC uses JSON
 
 data JsonRpcRequest = JsonRpcRequest Text [Value]
@@ -133,28 +110,12 @@ instance FromJSON JsonRpcResponse where
    parseJSON _          = mzero
 
 ------------------------------------------------------------------------------------------
-
 -- This is the generic version of a JSON RPC Call: fmap (...) (...)
 
 data JsonRpcCall :: * -> * where
   JsonRpcCall :: FromJSON a => JsonRpcRequest -> JsonRpcCall a
 
 ------------------------------------------------------------------------------------------
-{-
-        
-
-class JsonRpcMatch f where
-  rpcMatch :: JsonRpcCall a -> MONAD f a
-
-instance JsonRpcMatch Square where
-   rpcMatch (JsonRpcCall (JsonRpcRequest "square" [v])) = 
-                   do Success v' <- return (fromJSON v)
-                      r <- square v'
-                      Success r <- return (fromJSON (toJSON v))
-                      return r
-
-------------------------------------------------------------------------------------------
--}
 
 rpcServer :: (JsonRpc f) => JsonRpcSend :~> MONAD f
 rpcServer = Nat $ \ f -> case f of

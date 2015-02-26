@@ -47,11 +47,21 @@ a2m = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (point1 $$ ty)
 
 ---------------------------------------------------------------------------
 
-joinFunctor :: (Functor f) => (FUNCTOR f :~> f)
-joinFunctor = Nat $ foldNF (\ x_a tx -> fmap x_a tx) 
+class Run1 h g where
+  run1 :: (f :~> g) -> (h f :~> g)
 
---joinFunctor :: (Functor g) => (f :~> g) -> (FUNCTOR f :~> g)
---joinFunctor o = Nat $ foldNF $ \ x_a tx -> fmap x_a (o $$ tx)
+instance Functor g => Run1 FUNCTOR g where
+   run1 = joinFunctor
+
+instance Applicative g => Run1 APPLICATIVE g where
+   run1 = joinApplicative
+
+instance Monad g => Run1 MONAD g where
+   run1 = joinMonad
+
+
+joinFunctor :: (Functor g) => (f :~> g) -> (FUNCTOR f :~> g)
+joinFunctor o = Nat $ foldNF $ \ x_a tx -> fmap x_a (o $$ tx)
 
 joinApplicative :: (Applicative g) => (f :~> g) -> (APPLICATIVE f :~> g)
 joinApplicative o = Nat $ foldNAF pure $ \ ryz ty -> ryz <*> (o $$ ty)
