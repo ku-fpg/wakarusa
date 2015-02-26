@@ -155,8 +155,8 @@ instance JsonRpcMatch Square where
 ------------------------------------------------------------------------------------------
 -}
 
-server :: (JsonRpc f) => JsonRpcSend :~> MONAD f
-server = Nat $ \ f -> case f of
+rpcServer :: (JsonRpc f) => JsonRpcSend :~> MONAD f
+rpcServer = Nat $ \ f -> case f of
    JsonRpcSend (Send msgs) -> 
                 sequence [ decodeRpcCall (Send msg)
                          | msg <- msgs

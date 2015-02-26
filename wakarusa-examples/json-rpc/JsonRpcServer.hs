@@ -12,36 +12,15 @@ import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
 
 import Control.Wakarusa.Scotty
+import Control.Category ((>>>))
 
 import Web.Scotty
 
 import Square
 
-type Id x = x :~> x
-
-myApp :: MONAD Square :~> IO
-myApp = joinMonad evalSquare -- eval 
-      . joinMonad server     -- parse
---      . joinMonad network    -- network
-      . runMonad             -- eval the embedded method call
-
-myClient :: MONAD Square :~> MONAD JsonRpcSend
-myClient = runMonad
-
 myServer :: JsonRpcSend :~> IO
-myServer = joinMonad evalSquare -- eval 
-         . server               -- parse
-
--- simulate the connect
-networker :: ( ToJSON   req,  FromJSON resp, Sendee req  resp  f
-             , FromJSON req', ToJSON resp',  Sender req' resp' f'
-             ) 
-          => (f' :~> IO) -> IO (f :~> IO)       
-networker o = return $ Nat $ \ f -> case recv f of
-  Send msg -> do Success msg' <- return (fromJSON (toJSON msg))
-                 rep <- o $$ send msg'
-                 Success rep' <- return (fromJSON (toJSON rep))
-                 return rep'
+myServer =  rpcServer            -- parse
+        >>> joinMonad evalSquare -- eval 
 
 main = do
   let rule = scottyServer "/rpc" myServer
