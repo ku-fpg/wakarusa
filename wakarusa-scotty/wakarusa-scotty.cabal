@@ -15,12 +15,11 @@ library
   exposed-modules:     
                        Control.Wakarusa.Session.Scotty
 
-  other-extensions:    TypeFamilies, RankNTypes, GADTs, KindSignatures, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, FunctionalDependencies, UndecidableInstances, NullaryTypeClasses
   build-depends:       base >=4.7 && <4.8, 
                        wakarusa == 0.1.0.0, 
                        aeson == 0.8.*,
-                       transformers == 0.4.*,
-                       scotty == 0.9.1
+                       transformers >= 0.3.0 && <= 0.4.3,
+                       scotty == 0.9.*
   hs-source-dirs:      .
   default-language:    Haskell2010
 

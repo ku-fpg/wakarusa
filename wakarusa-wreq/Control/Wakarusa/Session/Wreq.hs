@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TypeOperators, OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeOperators, OverloadedStrings, MultiParamTypeClasses, GADTs #-}
 module Control.Wakarusa.Session.Wreq where
         
 import Data.Aeson
