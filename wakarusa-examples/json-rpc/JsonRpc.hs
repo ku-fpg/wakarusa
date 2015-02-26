@@ -24,9 +24,13 @@ myClient = runMonad
 main = do
   let myApp :: MONAD Square :~> IO
       myApp = runMonad >>> run1 (wreqClient "http://localhost:3000/rpc")
+
+  -- Test an outer chain of calls
   r <- myApp $$ square 4
   r <- myApp $$ square r
   print r
+
+  -- Test an inner chain of calls
   r <- myApp # do
           a <- square 4
           square a
@@ -34,10 +38,13 @@ main = do
 
   let myApp :: APPLICATIVE Square :~> IO
       myApp = runApplicative >>> run1 (wreqClient "http://localhost:3000/rpc")
+
+  -- Test an outer chain of calls
   r <- myApp $$ square 4
   r <- myApp $$ square r
   print r
 
+  -- Test an inner set of (parallel) calls
   (r1,r2) <- myApp #
           pure (,) 
             <*> square 4 
