@@ -7,11 +7,16 @@ import Control.Natural
 import Control.Wakarusa.Session
 --import Control.Monad.IO.Class  (MonadIO, liftIO)
 import Network.Wreq as W
+import Control.Lens ((^?))
 
-wreqClient :: ( ToJSON req,  FromJSON resp, Sendee req resp f )
+wreqClient :: forall req resp . ( ToJSON req,  FromJSON resp )
            => String
-           -> (f :~> IO)
-wreqClient nm = Nat $ \ f -> case recv f of
+           -> (Send req resp :~> IO)
+wreqClient nm = Nat $ \ f -> case f of
         Send msg -> do 
                 r <- W.post nm (toJSON msg)
-                return $ undefined
+                case r ^? responseBody of
+                   Nothing -> error "failure" :: IO resp
+                   Just bs -> case decode' bs of
+                                        Nothing -> error "failed decode"
+                                        Just r -> return r

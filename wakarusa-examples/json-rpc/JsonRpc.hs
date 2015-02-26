@@ -11,29 +11,9 @@ import Control.Wakarusa.Functor
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
 
+import Control.Wakarusa.Wreq
 
-data Square :: * -> * where
- Square :: Int -> Square Int      -- (remotely) square a number
-
-class Squarer f where
-  square :: Int -> f Int         
-
-instance Squarer Square where
-  square = Square
-
-instance Lift h => Squarer (h Square) where
-  square n = lift $$ square n
-
-instance JsonRpc Square where
-  encodeRpcCall (Square n) = call "square" [toJSON n]
-  decodeRpcCall (Send (JsonRpcRequest "square" [v])) = 
-                   do v' <- get v
-                      r <- square v'
-                      return (result r)
-
-evalSquare :: Square :~> IO
-evalSquare = Nat $ \ f -> case f of
-   Square n -> return (n * n)
+import Square
 
 type Id x = x :~> x
 
@@ -62,7 +42,7 @@ networker o = return $ Nat $ \ f -> case recv f of
                  return rep'
 
 main = do
-  session <- networker $ myServer
+  let session = wreqClient "http://httpbin.org/post" <<< foo1'
   let myApp :: MONAD Square :~> IO
       myApp = joinMonad session . runMonad
   r <- myApp $$ square 4
