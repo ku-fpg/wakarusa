@@ -10,7 +10,7 @@ boot:: sand.box
 	(cd wakarusa-wreq     ; cabal install )
 	(cd wakarusa-examples ; cabal build )
 
-sand.box::
+sand.box:
 	mkdir -p $(SANDBOX)
 	cabal sandbox init --sandbox $(SANDBOX)
 	(cd wakarusa          ; cabal sandbox init --sandbox ../$(SANDBOX) )
