@@ -13,4 +13,4 @@ cabal.config
 .\#*
 sand.box
 \#*
-
+tmp/
