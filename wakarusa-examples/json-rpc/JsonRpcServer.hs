@@ -11,7 +11,7 @@ import Control.Wakarusa.Functor
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
 
-import Control.Wakarusa.Scotty
+import Control.Wakarusa.Session.Scotty
 import Control.Category ((>>>))
 
 import Web.Scotty

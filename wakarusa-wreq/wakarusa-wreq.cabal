@@ -13,9 +13,8 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     
-                       Control.Wakarusa.Wreq
+                       Control.Wakarusa.Session.Wreq
 
-  other-extensions:    TypeFamilies, RankNTypes, GADTs, KindSignatures, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, FunctionalDependencies, UndecidableInstances, NullaryTypeClasses
   build-depends:       base >=4.7 && <4.8, wakarusa == 0.1.0.0,
                        wakarusa == 0.1.0.0, 
                        aeson == 0.8.*,

@@ -13,7 +13,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     
-                       Control.Wakarusa.Scotty
+                       Control.Wakarusa.Session.Scotty
 
   other-extensions:    TypeFamilies, RankNTypes, GADTs, KindSignatures, MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, FunctionalDependencies, UndecidableInstances, NullaryTypeClasses
   build-depends:       base >=4.7 && <4.8, 

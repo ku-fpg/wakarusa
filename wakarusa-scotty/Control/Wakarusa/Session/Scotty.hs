@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts, TypeOperators, OverloadedStrings, GADTs, ScopedTypeVariables, RankNTypes, KindSignatures, MultiParamTypeClasses, FlexibleInstances, GeneralizedNewtypeDeriving #-}
-module Control.Wakarusa.Scotty where
+module Control.Wakarusa.Session.Scotty where
         
 import Web.Scotty as S
 import Data.Aeson

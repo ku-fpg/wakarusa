@@ -12,7 +12,7 @@ import Control.Wakarusa.Functor
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
 
-import Control.Wakarusa.Wreq
+import Control.Wakarusa.Session.Wreq
 
 import Square
 
