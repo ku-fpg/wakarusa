@@ -3,7 +3,6 @@ module Square where
 
 import Data.Aeson 
 import Control.Natural  
-import Control.Wakarusa.Functor
 import Control.Wakarusa.Pointed1
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc

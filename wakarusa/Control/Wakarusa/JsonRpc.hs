@@ -8,7 +8,7 @@ import Data.Text(Text)
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Vector as Vector
 
-import Control.Monad.ConstrainedNormal
+import Control.Monad.Normal
 import Control.Applicative
 import Control.Monad (mzero)
 import Data.ByteString (ByteString)
@@ -17,7 +17,6 @@ import Data.Scientific
 import Control.Category((.))
 
 import Control.Wakarusa.Session
-import Control.Wakarusa.Functor
 import Control.Wakarusa.Functor1
 import Control.Wakarusa.Join1
 import Control.Wakarusa.Pointed1

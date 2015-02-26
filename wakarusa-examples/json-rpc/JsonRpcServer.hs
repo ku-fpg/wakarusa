@@ -7,7 +7,7 @@ import Control.Category
 
 import Data.Aeson 
 import Control.Natural
-import Control.Wakarusa.Functor
+import Control.Wakarusa.Join1
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
 
@@ -20,7 +20,7 @@ import Square
 
 myServer :: JsonRpcSend :~> IO
 myServer =  rpcServer            -- parse
-        >>> joinMonad evalSquare -- eval 
+        >>> run1 evalSquare      -- eval 
 
 main = do
   let rule = scottyServer "/rpc" myServer

@@ -8,9 +8,10 @@ import Control.Applicative
 
 import Data.Aeson 
 import Control.Natural
-import Control.Wakarusa.Functor
+import Control.Monad.Normal
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
+import Control.Wakarusa.Join1
 
 import Control.Wakarusa.Session.Wreq
 

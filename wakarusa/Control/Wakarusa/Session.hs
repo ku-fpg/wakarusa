@@ -7,8 +7,6 @@ import Control.Monad.ConstrainedNormal
 
 import Control.Natural
 
-import Control.Wakarusa.Functor
-import Control.Wakarusa.Functor1
 import Control.Wakarusa.Pointed1
 
 --import Control.Natural (Natural)
