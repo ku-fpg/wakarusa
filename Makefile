@@ -16,4 +16,8 @@ sandbox::
 	(cd wakarusa-examples ; cabal sandbox init --sandbox ../wakarusa/.cabal-sandbox )
 
 clean:
-	(cd wakarusa 	      ; cabal sandbox delete )
+	- (cd wakarusa          ; cabal sandbox delete )
+	(cd wakarusa          ; cabal clean )
+	(cd wakarusa-scotty   ; cabal clean )
+	(cd wakarusa-wreq     ; cabal clean )
+	(cd wakarusa-examples ; cabal clean )
