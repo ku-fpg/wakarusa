@@ -13,7 +13,7 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     
-                       Control.Natural,
+                       Control.Natural,                 
                        Control.Wakarusa.Session,
                        Control.Wakarusa.Functor,
                        Control.Wakarusa.Functor1,
