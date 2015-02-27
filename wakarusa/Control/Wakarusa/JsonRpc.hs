@@ -24,15 +24,24 @@ import Control.Wakarusa.Pointed1
 
 ------------------------------------------------------------------------------------------
 -- All sendable method calls are instances of 'JsonRpc'
+-- It should be possible to unify JsonRpcCaller and JsonRpcCallee,
+-- by using a better structure.
+
+data JsonRpcCaller :: * -> * where
+  JsonRpcCaller :: FromJSON a => Text -> [Value] -> JsonRpcCaller a
+
+data JsonRpcCallee :: * -> * where
+  JsonRpcCallee :: Text -> [Value] -> JsonRpcCallee JsonRpcResponse
+
 class JsonRpc f where
   -- These are both natural transformations
-  encodeRpcCall :: f a -> JsonRpcCaller a                -- always works
+  encodeRpcCall :: f a -> JsonRpcCaller a                 -- always works
   decodeRpcCall :: JsonRpcCallee a -> MONAD f a           -- can fail
-
 
 ------------------------------------------------------------------------------------------
 -- Small DSL for building JsonRpc instances
 
+call :: FromJSON a => Text -> [Value] -> JsonRpcCaller a
 call nm args = JsonRpcCaller nm args
 
 get a = do Success v <- return (fromJSON a)
@@ -76,7 +85,6 @@ runApplicative  = Nat $ \ f -> do
                               case fromJSON y of
                                 Error {} -> error $ "failed"
                                 Success v -> return (ys, r v)
-
    (_,a) <- fn naf []
    return a
 
@@ -112,15 +120,6 @@ instance FromJSON JsonRpcResponse where
    parseJSON (Object v) = JsonRpcResponse
                       <$> v .: "result"
    parseJSON _          = mzero
-
-------------------------------------------------------------------------------------------
--- This is the generic version of a JSON RPC Call: fmap (...) (...)
-
-data JsonRpcCaller :: * -> * where
-  JsonRpcCaller :: FromJSON a => Text -> [Value] -> JsonRpcCaller a
-
-data JsonRpcCallee :: * -> * where
-  JsonRpcCallee :: Text -> [Value] -> JsonRpcCallee JsonRpcResponse
 
 ------------------------------------------------------------------------------------------
 
