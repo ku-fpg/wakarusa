@@ -26,14 +26,14 @@ import Control.Wakarusa.Pointed1
 -- All sendable method calls are instances of 'JsonRpc'
 class JsonRpc f where
   -- These are both natural transformations
-  encodeRpcCall :: f a  -> JsonRpcCall a       -- always works
-  decodeRpcCall :: JsonRpcCall a -> MONAD f a           -- can fail
+  encodeRpcCall :: f a -> JsonRpcCaller a                -- always works
+  decodeRpcCall :: JsonRpcCallee a -> MONAD f a           -- can fail
 
 
 ------------------------------------------------------------------------------------------
 -- Small DSL for building JsonRpc instances
 
-call nm args = JsonRpcCall nm args
+call nm args = JsonRpcCaller nm args
 
 get a = do Success v <- return (fromJSON a)
            return v
@@ -71,7 +71,7 @@ runApplicative  = Nat $ \ f -> do
        fn (PureNAF a) xs = do res <- send (reverse xs)
                               return (reverse res,a)
        fn (ApNAF g a) xs = case encodeRpcCall a of
-                             JsonRpcCall f args -> do
+                             JsonRpcCaller f args -> do
                               (JsonRpcResponse y : ys,r) <- fn g (JsonRpcRequest f args : xs)
                               case fromJSON y of
                                 Error {} -> error $ "failed"
@@ -116,15 +116,18 @@ instance FromJSON JsonRpcResponse where
 ------------------------------------------------------------------------------------------
 -- This is the generic version of a JSON RPC Call: fmap (...) (...)
 
-data JsonRpcCall :: * -> * where
-  JsonRpcCall :: Text -> [Value] -> JsonRpcCall JsonRpcResponse
+data JsonRpcCaller :: * -> * where
+  JsonRpcCaller :: FromJSON a => Text -> [Value] -> JsonRpcCaller a
+
+data JsonRpcCallee :: * -> * where
+  JsonRpcCallee :: Text -> [Value] -> JsonRpcCallee JsonRpcResponse
 
 ------------------------------------------------------------------------------------------
 
 rpcServer :: (JsonRpc f) => JsonRpcSend :~> MONAD f
 rpcServer = Nat $ \ f -> case f of
    JsonRpcSend (Send msgs) -> 
-                sequence [ decodeRpcCall $ JsonRpcCall f args
+                sequence [ decodeRpcCall $ JsonRpcCallee f args
                          | JsonRpcRequest f args <- msgs
                          ]
 
