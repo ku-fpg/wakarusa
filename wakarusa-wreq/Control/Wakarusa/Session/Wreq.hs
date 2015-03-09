@@ -4,6 +4,7 @@ module Control.Wakarusa.Session.Wreq where
 import Data.Aeson
 
 import Control.Natural
+import Control.Transformation
 import Control.Wakarusa.Session
 import Network.Wreq as W
 import Control.Lens ((^?))

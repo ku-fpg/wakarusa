@@ -8,6 +8,7 @@ import Control.Applicative
 
 import Data.Aeson 
 import Control.Natural
+import Control.Transformation
 import Control.Monad.Normal
 import Control.Wakarusa.Session
 import Control.Wakarusa.JsonRpc
